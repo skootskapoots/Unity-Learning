@@ -257,8 +257,8 @@ GameObject:
   - component: {fileID: 7314491148678789772}
   - component: {fileID: 7314491148678789773}
   - component: {fileID: 7314491148678789774}
-  - component: {fileID: 7697863581119058506}
   - component: {fileID: 861035586856587190}
+  - component: {fileID: 7697863581119058506}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -346,21 +346,6 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &7697863581119058506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7314491148678789768}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66dad228e8dc61740b95fed6085810ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  characterController: {fileID: 861035586856587190}
-  movementSpeedFactor: 6
-  movementSpeedSmoothing: 0.02
 --- !u!143 &861035586856587190
 CharacterController:
   m_ObjectHideFlags: 0
@@ -379,6 +364,21 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7697863581119058506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7314491148678789768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66dad228e8dc61740b95fed6085810ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterController: {fileID: 861035586856587190}
+  movementSpeedFactor: 6
+  movementSpeedSmoothing: 0.02
 --- !u!1001 &4474964999804690727
 PrefabInstance:
   m_ObjectHideFlags: 0
