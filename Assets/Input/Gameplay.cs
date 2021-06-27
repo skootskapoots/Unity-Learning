@@ -1,17 +1,17 @@
+// GENERATED AUTOMATICALLY FROM 'Assets/Scripts/Inputs/Gameplay.inputactions'
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Interfaces;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 
-public class PlayerControls : IInputActionCollection, IDisposable
+public class @Gameplay : IInputActionCollection, IDisposable
 {
-    public InputActionAsset Asset { get; }
-
-    public PlayerControls()
+    public InputActionAsset asset { get; }
+    public @Gameplay()
     {
-        Asset = InputActionAsset.FromJson(@"{
+        asset = InputActionAsset.FromJson(@"{
     ""name"": ""Gameplay"",
     ""maps"": [
         {
@@ -232,39 +232,39 @@ public class PlayerControls : IInputActionCollection, IDisposable
     ]
 }");
         // Player
-        _player = Asset.FindActionMap("Player", true);
-        _playerMovement = _player.FindAction("Movement", true);
-        _playerLook = _player.FindAction("Look", true);
-        _playerFire = _player.FindAction("Fire", true);
+        m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
+        m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
+        m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
+        m_Player_Fire = m_Player.FindAction("Fire", throwIfNotFound: true);
     }
 
     public void Dispose()
     {
-        UnityEngine.Object.Destroy(Asset);
+        UnityEngine.Object.Destroy(asset);
     }
 
     public InputBinding? bindingMask
     {
-        get => Asset.bindingMask;
-        set => Asset.bindingMask = value;
+        get => asset.bindingMask;
+        set => asset.bindingMask = value;
     }
 
     public ReadOnlyArray<InputDevice>? devices
     {
-        get => Asset.devices;
-        set => Asset.devices = value;
+        get => asset.devices;
+        set => asset.devices = value;
     }
 
-    public ReadOnlyArray<InputControlScheme> controlSchemes => Asset.controlSchemes;
+    public ReadOnlyArray<InputControlScheme> controlSchemes => asset.controlSchemes;
 
     public bool Contains(InputAction action)
     {
-        return Asset.Contains(action);
+        return asset.Contains(action);
     }
 
     public IEnumerator<InputAction> GetEnumerator()
     {
-        return Asset.GetEnumerator();
+        return asset.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -274,128 +274,84 @@ public class PlayerControls : IInputActionCollection, IDisposable
 
     public void Enable()
     {
-        Asset.Enable();
+        asset.Enable();
     }
 
     public void Disable()
     {
-        Asset.Disable();
+        asset.Disable();
     }
 
     // Player
-    private readonly InputActionMap _player;
-    private IPlayerActionMovement _playerActionsMovementCallbackInterface;
-    private IPlayerActionLook _playerActionsLookCallbackInterface;
-    private IPlayerActionFire _playerActionsFireCallbackInterface;
-    private readonly InputAction _playerMovement;
-    private readonly InputAction _playerLook;
-    private readonly InputAction _playerFire;
-
+    private readonly InputActionMap m_Player;
+    private IPlayerActions m_PlayerActionsCallbackInterface;
+    private readonly InputAction m_Player_Movement;
+    private readonly InputAction m_Player_Look;
+    private readonly InputAction m_Player_Fire;
     public struct PlayerActions
     {
-        private PlayerControls _wrapper;
-
-        public PlayerActions(PlayerControls wrapper)
+        private @Gameplay m_Wrapper;
+        public PlayerActions(@Gameplay wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Movement => m_Wrapper.m_Player_Movement;
+        public InputAction @Look => m_Wrapper.m_Player_Look;
+        public InputAction @Fire => m_Wrapper.m_Player_Fire;
+        public InputActionMap Get() { return m_Wrapper.m_Player; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(PlayerActions set) { return set.Get(); }
+        public void SetCallbacks(IPlayerActions instance)
         {
-            _wrapper = wrapper;
-        }
-
-        public InputAction @Movement => _wrapper._playerMovement;
-        public InputAction @Look => _wrapper._playerLook;
-        public InputAction @Fire => _wrapper._playerFire;
-
-        public InputActionMap Get()
-        {
-            return _wrapper._player;
-        }
-
-        public void Enable()
-        {
-            Get().Enable();
-        }
-
-        public void Disable()
-        {
-            Get().Disable();
-        }
-
-        public bool Enabled => Get().enabled;
-
-        public static implicit operator InputActionMap(PlayerActions set)
-        {
-            return set.Get();
-        }
-
-        public void SetMovementCallbacks(IPlayerActionMovement instance)
-        {
-            if (_wrapper._playerActionsMovementCallbackInterface != null)
+            if (m_Wrapper.m_PlayerActionsCallbackInterface != null)
             {
-                @Movement.started -= _wrapper._playerActionsMovementCallbackInterface.OnMovement;
-                @Movement.performed -= _wrapper._playerActionsMovementCallbackInterface.OnMovement;
-                @Movement.canceled -= _wrapper._playerActionsMovementCallbackInterface.OnMovement;
+                @Movement.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMovement;
+                @Movement.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMovement;
+                @Movement.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMovement;
+                @Look.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnLook;
+                @Look.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnLook;
+                @Look.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnLook;
+                @Fire.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnFire;
+                @Fire.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnFire;
+                @Fire.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnFire;
             }
-
-            _wrapper._playerActionsMovementCallbackInterface = instance;
-            if (instance == null) return;
-            @Movement.started += instance.OnMovement;
-            @Movement.performed += instance.OnMovement;
-            @Movement.canceled += instance.OnMovement;
-        }
-        
-        public void SetLookCallbacks(IPlayerActionLook instance)
-        {
-            if (_wrapper._playerActionsLookCallbackInterface != null)
+            m_Wrapper.m_PlayerActionsCallbackInterface = instance;
+            if (instance != null)
             {
-                @Look.started -= _wrapper._playerActionsLookCallbackInterface.OnLook;
-                @Look.performed -= _wrapper._playerActionsLookCallbackInterface.OnLook;
-                @Look.canceled -= _wrapper._playerActionsLookCallbackInterface.OnLook;
+                @Movement.started += instance.OnMovement;
+                @Movement.performed += instance.OnMovement;
+                @Movement.canceled += instance.OnMovement;
+                @Look.started += instance.OnLook;
+                @Look.performed += instance.OnLook;
+                @Look.canceled += instance.OnLook;
+                @Fire.started += instance.OnFire;
+                @Fire.performed += instance.OnFire;
+                @Fire.canceled += instance.OnFire;
             }
-
-            _wrapper._playerActionsLookCallbackInterface = instance;
-            if (instance == null) return;
-            @Look.started += instance.OnLook;
-            @Look.performed += instance.OnLook;
-            @Look.canceled += instance.OnLook;
-        }
-        
-        public void SetFireCallbacks(IPlayerActionFire instance)
-        {
-            if (_wrapper._playerActionsFireCallbackInterface != null)
-            {
-                @Fire.started -= _wrapper._playerActionsFireCallbackInterface.OnFire;
-                @Fire.performed -= _wrapper._playerActionsFireCallbackInterface.OnFire;
-                @Fire.canceled -= _wrapper._playerActionsFireCallbackInterface.OnFire;
-            }
-
-            _wrapper._playerActionsFireCallbackInterface = instance;
-            if (instance == null) return;
-            @Fire.started += instance.OnFire;
-            @Fire.performed += instance.OnFire;
-            @Fire.canceled += instance.OnFire;
         }
     }
-
     public PlayerActions @Player => new PlayerActions(this);
-    private int _keyboardMouseSchemeIndex = -1;
-
+    private int m_KeyboardMouseSchemeIndex = -1;
     public InputControlScheme KeyboardMouseScheme
     {
         get
         {
-            if (_keyboardMouseSchemeIndex == -1)
-                _keyboardMouseSchemeIndex = Asset.FindControlSchemeIndex("Keyboard&Mouse");
-            return Asset.controlSchemes[_keyboardMouseSchemeIndex];
+            if (m_KeyboardMouseSchemeIndex == -1) m_KeyboardMouseSchemeIndex = asset.FindControlSchemeIndex("Keyboard&Mouse");
+            return asset.controlSchemes[m_KeyboardMouseSchemeIndex];
         }
     }
-
-    private int _gamepadSchemeIndex = -1;
-
+    private int m_GamepadSchemeIndex = -1;
     public InputControlScheme GamepadScheme
     {
         get
         {
-            if (_gamepadSchemeIndex == -1) _gamepadSchemeIndex = Asset.FindControlSchemeIndex("Gamepad");
-            return Asset.controlSchemes[_gamepadSchemeIndex];
+            if (m_GamepadSchemeIndex == -1) m_GamepadSchemeIndex = asset.FindControlSchemeIndex("Gamepad");
+            return asset.controlSchemes[m_GamepadSchemeIndex];
         }
+    }
+    public interface IPlayerActions
+    {
+        void OnMovement(InputAction.CallbackContext context);
+        void OnLook(InputAction.CallbackContext context);
+        void OnFire(InputAction.CallbackContext context);
     }
 }
