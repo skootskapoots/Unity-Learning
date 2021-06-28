@@ -51,6 +51,14 @@ namespace Inputs
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""Jump"",
+                    ""type"": ""Button"",
+                    ""id"": ""f6bac4cb-cd80-4029-98f5-fc86554178ac"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -229,6 +237,28 @@ namespace Inputs
                     ""action"": ""Sprint"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""70d9212b-417b-40a3-9dcf-299394cb5287"",
+                    ""path"": ""<Gamepad>/buttonEast"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ba62589a-b966-442b-b59c-7a0b2a0fe043"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -267,6 +297,7 @@ namespace Inputs
             _player = Asset.FindActionMap("Player", true);
             _playerMovement = _player.FindAction("Movement", true);
             _playerSprint = _player.FindAction("Sprint", true);
+            _playerJump = _player.FindAction("Jump", true);
             _playerLook = _player.FindAction("Look", true);
             _playerFire = _player.FindAction("Fire", true);
         }
@@ -319,10 +350,12 @@ namespace Inputs
         private readonly InputActionMap _player;
         private IPlayerActionMovement _playerActionsMovementCallbackInterface;
         private IPlayerActionSprint _playerActionsSprintCallbackInterface;
+        private IPlayerActionJump _playerActionsJumpCallbackInterface;
         private IPlayerActionLook _playerActionsLookCallbackInterface;
         private IPlayerActionFire _playerActionsFireCallbackInterface;
         private readonly InputAction _playerMovement;
         private readonly InputAction _playerSprint;
+        private readonly InputAction _playerJump;
         private readonly InputAction _playerLook;
         private readonly InputAction _playerFire;
 
@@ -337,6 +370,7 @@ namespace Inputs
 
             public InputAction @Movement => _wrapper._playerMovement;
             public InputAction @Sprint => _wrapper._playerSprint;
+            public InputAction @Jump => _wrapper._playerJump;
             public InputAction @Look => _wrapper._playerLook;
             public InputAction @Fire => _wrapper._playerFire;
 
@@ -392,6 +426,22 @@ namespace Inputs
                 @Sprint.started += instance.OnSprint;
                 @Sprint.performed += instance.OnSprint;
                 @Sprint.canceled += instance.OnSprint;
+            }
+            
+            public void SetJumpCallbacks(IPlayerActionJump instance)
+            {
+                if (_wrapper._playerActionsJumpCallbackInterface != null)
+                {
+                    @Jump.started -= _wrapper._playerActionsJumpCallbackInterface.OnJump;
+                    @Jump.performed -= _wrapper._playerActionsJumpCallbackInterface.OnJump;
+                    @Jump.canceled -= _wrapper._playerActionsJumpCallbackInterface.OnJump;
+                }
+
+                _wrapper._playerActionsJumpCallbackInterface = instance;
+                if (instance == null) return;
+                @Jump.started += instance.OnJump;
+                @Jump.performed += instance.OnJump;
+                @Jump.canceled += instance.OnJump;
             }
         
             public void SetLookCallbacks(IPlayerActionLook instance)
