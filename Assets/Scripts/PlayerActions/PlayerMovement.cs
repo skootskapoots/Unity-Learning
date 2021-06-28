@@ -14,7 +14,7 @@ namespace PlayerActions
 
         [Header("Jump Settings")]
         [SerializeField] private float jumpHeight = 3f;
-        [SerializeField] private float gravity = -9.81f;
+        [SerializeField] private float gravityFactor = 2f;
         [SerializeField] private float groundCheckDistance = 0.4f;
         [SerializeField] private LayerMask groundMask;
 
@@ -65,7 +65,7 @@ namespace PlayerActions
                 _velocity.y = -2f;
             }
             
-            _velocity.y += gravity * Time.deltaTime;
+            _velocity.y += Physics.gravity.y * gravityFactor * Time.deltaTime;
             characterController.Move(_velocity * Time.deltaTime);
         }
 
@@ -83,7 +83,7 @@ namespace PlayerActions
         {
             if (context.ReadValue<float>() > 0 && _velocity.y < 0)
             {
-                _velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                _velocity.y = Mathf.Sqrt(jumpHeight * -2f * Physics.gravity.y);
             }
         }
     

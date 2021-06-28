@@ -410,7 +410,8 @@ MonoBehaviour:
   movementSpeedFactor: 6
   movementSpeedSmoothing: 0.02
   sprintSpeedMultiplier: 1.5
-  gravity: -9.81
+  jumpHeight: 3
+  gravity: -19.62
   groundCheckDistance: 0.4
   groundMask:
     serializedVersion: 2
