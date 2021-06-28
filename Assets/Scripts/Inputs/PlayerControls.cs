@@ -43,6 +43,14 @@ namespace Inputs
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""Sprint"",
+                    ""type"": ""Button"",
+                    ""id"": ""dcf43f88-2c62-443f-8919-0d6c4dffbe09"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -199,6 +207,28 @@ namespace Inputs
                     ""action"": ""Fire"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b3661e52-1545-4f23-83b6-b7d28dc1baae"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Sprint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8226165b-3ad5-4af0-9f68-34f5348029ae"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Sprint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -236,6 +266,7 @@ namespace Inputs
             // Player
             _player = Asset.FindActionMap("Player", true);
             _playerMovement = _player.FindAction("Movement", true);
+            _playerSprint = _player.FindAction("Sprint", true);
             _playerLook = _player.FindAction("Look", true);
             _playerFire = _player.FindAction("Fire", true);
         }
@@ -287,9 +318,11 @@ namespace Inputs
         // Player
         private readonly InputActionMap _player;
         private IPlayerActionMovement _playerActionsMovementCallbackInterface;
+        private IPlayerActionSprint _playerActionsSprintCallbackInterface;
         private IPlayerActionLook _playerActionsLookCallbackInterface;
         private IPlayerActionFire _playerActionsFireCallbackInterface;
         private readonly InputAction _playerMovement;
+        private readonly InputAction _playerSprint;
         private readonly InputAction _playerLook;
         private readonly InputAction _playerFire;
 
@@ -303,6 +336,7 @@ namespace Inputs
             }
 
             public InputAction @Movement => _wrapper._playerMovement;
+            public InputAction @Sprint => _wrapper._playerSprint;
             public InputAction @Look => _wrapper._playerLook;
             public InputAction @Fire => _wrapper._playerFire;
 
@@ -342,6 +376,22 @@ namespace Inputs
                 @Movement.started += instance.OnMovement;
                 @Movement.performed += instance.OnMovement;
                 @Movement.canceled += instance.OnMovement;
+            }
+            
+            public void SetSprintCallbacks(IPlayerActionSprint instance)
+            {
+                if (_wrapper._playerActionsSprintCallbackInterface != null)
+                {
+                    @Sprint.started -= _wrapper._playerActionsSprintCallbackInterface.OnSprint;
+                    @Sprint.performed -= _wrapper._playerActionsSprintCallbackInterface.OnSprint;
+                    @Sprint.canceled -= _wrapper._playerActionsSprintCallbackInterface.OnSprint;
+                }
+
+                _wrapper._playerActionsSprintCallbackInterface = instance;
+                if (instance == null) return;
+                @Sprint.started += instance.OnSprint;
+                @Sprint.performed += instance.OnSprint;
+                @Sprint.canceled += instance.OnSprint;
             }
         
             public void SetLookCallbacks(IPlayerActionLook instance)
