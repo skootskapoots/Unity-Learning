@@ -3,7 +3,7 @@ using Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Actions
+namespace Player.Actions
 {
     public class PlayerMovement : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump
     {
