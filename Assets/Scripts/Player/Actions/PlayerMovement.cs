@@ -15,19 +15,15 @@ namespace Actions
         [Header("Jump Settings")]
         [SerializeField] private float jumpHeight = 3f;
         [SerializeField] private float gravityFactor = 2f;
-        [SerializeField] private float groundCheckDistance = 0.4f;
-        [SerializeField] private LayerMask groundMask;
 
         [Header("Component Registry")]
         [SerializeField] private CharacterController characterController;
-        [SerializeField] private Transform groundCheck;
 
         private PlayerControls _playerControls;
         private Vector2 _currentMove;
         private Vector2 _targetMove;
         private Vector3 _velocity;
         private bool _isSprinting;
-        private bool _isGrounded;
 
         private void Awake()
         {
@@ -39,34 +35,17 @@ namespace Actions
 
         private void Update()
         {
-            MovementUpdate();
-            JumpUpdate();
-        }
+            _velocity.y += Physics.gravity.y * gravityFactor * Time.deltaTime;
 
-        
-        private void MovementUpdate()
-        {
             var position = transform;
             var zeroVelocity = Vector2.zero;
 
             _currentMove = Vector2.SmoothDamp(_currentMove, _targetMove, ref zeroVelocity, movementSpeedSmoothing);
-            
+
             var move = position.right * _currentMove.x + position.forward * _currentMove.y;
             var speed = _isSprinting ? movementSpeedFactor * sprintSpeedMultiplier : movementSpeedFactor;
-            characterController.Move(move * (speed * Time.deltaTime));
-        }
 
-        private void JumpUpdate()
-        {
-            _isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckDistance, groundMask);
-
-            if (_isGrounded && _velocity.y < 0)
-            {
-                _velocity.y = -2f;
-            }
-            
-            _velocity.y += Physics.gravity.y * gravityFactor * Time.deltaTime;
-            characterController.Move(_velocity * Time.deltaTime);
+            characterController.Move(move * (speed * Time.deltaTime) + _velocity * Time.deltaTime);
         }
 
         public void OnMovement(InputAction.CallbackContext context)
@@ -76,12 +55,15 @@ namespace Actions
 
         public void OnSprint(InputAction.CallbackContext context)
         {
-            _isSprinting = context.ReadValue<float>() > 0;
+            if (characterController.isGrounded)
+            {
+                _isSprinting = context.ReadValue<float>() > 0;
+            }
         }
         
         public void OnJump(InputAction.CallbackContext context)
         {
-            if (context.ReadValue<float>() > 0 && _velocity.y < 0)
+            if (context.ReadValue<float>() > 0 && characterController.isGrounded)
             {
                 _velocity.y = Mathf.Sqrt(jumpHeight * -2f * Physics.gravity.y);
             }
