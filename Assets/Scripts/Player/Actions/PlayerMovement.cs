@@ -18,6 +18,10 @@ namespace Player.Actions
         [SerializeField] private float jumpHeight = 3f;
         [SerializeField] private float gravityFactor = 2f;
 
+        [Header("Crouch Settings")]
+        [SerializeField] private float crouchFactor = 0.75f;
+        [SerializeField] private float crouchSpeedMultiplier = 0.4f;
+
         [Header("Component Registry")]
         [SerializeField] private CharacterController characterController;
 
@@ -26,6 +30,7 @@ namespace Player.Actions
         private Vector2 _targetMove;
         private Vector3 _velocity;
         private bool _isSprinting;
+        private bool _isCrouching;
 
         private void Awake()
         {
@@ -38,17 +43,27 @@ namespace Player.Actions
 
         private void Update()
         {
+            if (_velocity.y < Physics.gravity.y) _velocity.y = Physics.gravity.y;
+
             _velocity.y += Physics.gravity.y * gravityFactor * Time.deltaTime;
 
             var position = transform;
             var zeroVelocity = Vector2.zero;
 
             _currentMove = Vector2.SmoothDamp(_currentMove, _targetMove, ref zeroVelocity, movementSpeedSmoothing);
-
             var move = position.right * _currentMove.x + position.forward * _currentMove.y;
-            var speed = _isSprinting ? movementSpeedFactor * sprintSpeedMultiplier : movementSpeedFactor;
 
-            characterController.Move(move * (speed * Time.deltaTime) + _velocity * Time.deltaTime);
+            characterController.Move(move * (GetSpeed() * Time.deltaTime) + _velocity * Time.deltaTime);
+        }
+
+        private float GetSpeed()
+        {
+            var speed = movementSpeedFactor;
+
+            if (_isSprinting) speed *= sprintSpeedMultiplier;
+            if (_isCrouching) speed *= crouchSpeedMultiplier;
+
+            return speed;
         }
 
         public void OnMovement(InputAction.CallbackContext context)
@@ -66,19 +81,15 @@ namespace Player.Actions
 
         public void OnCrouch(InputAction.CallbackContext context)
         {
-            if (context.ReadValue<float>() > 0 && characterController.isGrounded)
+            if (characterController.isGrounded)
             {
-                transform.localScale -= new Vector3(0, 0.75f, 0);
-            }
-            else
-            {
-                transform.localScale = new Vector3(1, 1, 1);
+                _isCrouching = context.ReadValue<float>() > 0;
             }
         }
 
         public void OnJump(InputAction.CallbackContext context)
         {
-            if (context.ReadValue<float>() > 0 && characterController.isGrounded)
+            if (context.ReadValue<float>() > 0 && characterController.isGrounded && !_isCrouching)
             {
                 _velocity.y = Mathf.Sqrt(jumpHeight * -2f * Physics.gravity.y);
             }

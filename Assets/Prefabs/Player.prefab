@@ -399,6 +399,8 @@ MonoBehaviour:
   sprintSpeedMultiplier: 1.5
   jumpHeight: 3
   gravityFactor: 2
+  crouchFactor: 0.75
+  crouchSpeedMultiplier: 0.4
   characterController: {fileID: 861035586856587190}
 --- !u!1001 &4474964999804690727
 PrefabInstance:
