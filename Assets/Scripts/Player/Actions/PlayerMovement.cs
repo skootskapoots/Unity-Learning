@@ -5,7 +5,9 @@ using UnityEngine.InputSystem;
 
 namespace Player.Actions
 {
-    public class PlayerMovement : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump
+    [RequireComponent(typeof(CharacterController))]
+    public class PlayerMovement : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump,
+        IPlayerActionCrouch
     {
         [Header("Movement Settings")]
         [SerializeField] private float movementSpeedFactor = 6f;
@@ -31,6 +33,7 @@ namespace Player.Actions
             _playerControls.Player.SetMovementCallbacks(this);
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
+            _playerControls.Player.SetCrouchCallbacks(this);
         }
 
         private void Update()
@@ -60,7 +63,19 @@ namespace Player.Actions
                 _isSprinting = context.ReadValue<float>() > 0;
             }
         }
-        
+
+        public void OnCrouch(InputAction.CallbackContext context)
+        {
+            if (context.ReadValue<float>() > 0 && characterController.isGrounded)
+            {
+                transform.localScale -= new Vector3(0, 0.75f, 0);
+            }
+            else
+            {
+                transform.localScale = new Vector3(1, 1, 1);
+            }
+        }
+
         public void OnJump(InputAction.CallbackContext context)
         {
             if (context.ReadValue<float>() > 0 && characterController.isGrounded)

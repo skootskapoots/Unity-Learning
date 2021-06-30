@@ -59,6 +59,14 @@ namespace Inputs
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""Crouch"",
+                    ""type"": ""Button"",
+                    ""id"": ""925a6225-4cdc-444b-b3ed-bf58c2e35769"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -259,6 +267,28 @@ namespace Inputs
                     ""action"": ""Jump"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4cad0cb3-5c8f-4917-a2de-867cbb47f6df"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Crouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""49b1f8ee-d789-490a-a05a-bb7b8b3e1512"",
+                    ""path"": ""<Keyboard>/leftCtrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Crouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -297,6 +327,7 @@ namespace Inputs
             _player = Asset.FindActionMap("Player", true);
             _playerMovement = _player.FindAction("Movement", true);
             _playerSprint = _player.FindAction("Sprint", true);
+            _playerCrouch = _player.FindAction("Crouch", true);
             _playerJump = _player.FindAction("Jump", true);
             _playerLook = _player.FindAction("Look", true);
             _playerFire = _player.FindAction("Fire", true);
@@ -350,11 +381,13 @@ namespace Inputs
         private readonly InputActionMap _player;
         private IPlayerActionMovement _playerActionsMovementCallbackInterface;
         private IPlayerActionSprint _playerActionsSprintCallbackInterface;
+        private IPlayerActionCrouch _playerActionsCrouchCallbackInterface;
         private IPlayerActionJump _playerActionsJumpCallbackInterface;
         private IPlayerActionLook _playerActionsLookCallbackInterface;
         private IPlayerActionFire _playerActionsFireCallbackInterface;
         private readonly InputAction _playerMovement;
         private readonly InputAction _playerSprint;
+        private readonly InputAction _playerCrouch;
         private readonly InputAction _playerJump;
         private readonly InputAction _playerLook;
         private readonly InputAction _playerFire;
@@ -370,6 +403,7 @@ namespace Inputs
 
             public InputAction @Movement => _wrapper._playerMovement;
             public InputAction @Sprint => _wrapper._playerSprint;
+            public InputAction @Crouch => _wrapper._playerCrouch;
             public InputAction @Jump => _wrapper._playerJump;
             public InputAction @Look => _wrapper._playerLook;
             public InputAction @Fire => _wrapper._playerFire;
@@ -426,6 +460,22 @@ namespace Inputs
                 @Sprint.started += instance.OnSprint;
                 @Sprint.performed += instance.OnSprint;
                 @Sprint.canceled += instance.OnSprint;
+            }
+            
+            public void SetCrouchCallbacks(IPlayerActionCrouch instance)
+            {
+                if (_wrapper._playerActionsCrouchCallbackInterface != null)
+                {
+                    @Crouch.started -= _wrapper._playerActionsCrouchCallbackInterface.OnCrouch;
+                    @Crouch.performed -= _wrapper._playerActionsCrouchCallbackInterface.OnCrouch;
+                    @Crouch.canceled -= _wrapper._playerActionsCrouchCallbackInterface.OnCrouch;
+                }
+
+                _wrapper._playerActionsCrouchCallbackInterface = instance;
+                if (instance == null) return;
+                @Crouch.started += instance.OnCrouch;
+                @Crouch.performed += instance.OnCrouch;
+                @Crouch.canceled += instance.OnCrouch;
             }
             
             public void SetJumpCallbacks(IPlayerActionJump instance)
