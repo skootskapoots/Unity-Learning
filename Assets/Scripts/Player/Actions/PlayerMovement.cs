@@ -19,11 +19,12 @@ namespace Player.Actions
         [SerializeField] private float gravityFactor = 2f;
 
         [Header("Crouch Settings")]
-        [SerializeField] private float crouchFactor = 0.75f;
+        [SerializeField] private Vector3 crouchPosition = new Vector3(0f, -0.25f, 0f);
         [SerializeField] private float crouchSpeedMultiplier = 0.4f;
 
         [Header("Component Registry")]
         [SerializeField] private CharacterController characterController;
+        [SerializeField] private GameObject playerBody;
 
         private PlayerControls _playerControls;
         private Vector2 _currentMove;
@@ -43,8 +44,13 @@ namespace Player.Actions
 
         private void Update()
         {
-            if (_velocity.y < Physics.gravity.y) _velocity.y = Physics.gravity.y;
+            NormalizeGravity();
+            GetMove();
+            GetStance();
+        }
 
+        private void GetMove()
+        {
             _velocity.y += Physics.gravity.y * gravityFactor * Time.deltaTime;
 
             var position = transform;
@@ -56,6 +62,11 @@ namespace Player.Actions
             characterController.Move(move * (GetSpeed() * Time.deltaTime) + _velocity * Time.deltaTime);
         }
 
+        private void GetStance()
+        {
+            playerBody.transform.localPosition = _isCrouching ? crouchPosition : Vector3.zero;
+        }
+
         private float GetSpeed()
         {
             var speed = movementSpeedFactor;
@@ -64,6 +75,11 @@ namespace Player.Actions
             if (_isCrouching) speed *= crouchSpeedMultiplier;
 
             return speed;
+        }
+
+        private void NormalizeGravity()
+        {
+            if (_velocity.y < Physics.gravity.y) _velocity.y = Physics.gravity.y;
         }
 
         public void OnMovement(InputAction.CallbackContext context)
