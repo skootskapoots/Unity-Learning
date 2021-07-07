@@ -24,7 +24,7 @@ namespace Inputs
                     ""name"": ""Movement"",
                     ""type"": ""Value"",
                     ""id"": ""4804fb33-dc29-4837-b566-4aac5901002f"",
-                    ""expectedControlType"": ""Vector2"",
+                    ""expectedControlType"": ""Vector3"",
                     ""processors"": """",
                     ""interactions"": """"
                 },
