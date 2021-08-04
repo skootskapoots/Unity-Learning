@@ -1,4 +1,3 @@
-using System;
 using Inputs;
 using Interfaces;
 using UnityEngine;
@@ -11,100 +10,170 @@ namespace Player.Actions
         IPlayerActionCrouch
     {
         [Header("Movement Settings")]
-        [SerializeField] private float movementSpeedFactor = 6f;
-        [SerializeField] private float movementSpeedSmoothing = 0.02f;
-        [SerializeField] private float sprintSpeedMultiplier = 1.5f;
+        [Tooltip("Walking speed (m/s)")]
+        [SerializeField] private float walkingSpeed = 4f;
+        [Tooltip("Sprinting speed (m/s)")]
+        [SerializeField] private float sprintSpeed = 6f;
+        [Tooltip("Maximum player acceleration and deceleration")]
+        [SerializeField] private float maxAcceleration = 10f;
 
         [Header("Jump Settings")]
-        [SerializeField] private float jumpForce = 100f;
-        [Header("Crouch Settings")]
-        [SerializeField] private Vector3 crouchPosition = new Vector3(0f, -0.25f, 0f);
-        [SerializeField] private float crouchSpeedMultiplier = 0.4f;
+        [Tooltip("Jump height in meters")]
+        [SerializeField] private float jumpHeight = 1.2f;
+        [Tooltip("Maximum player jump acceleration")]
+        [SerializeField] private float maxJumpAcceleration = 1f;
+        
+        [Header("Ground Settings")]
+        [Tooltip("Max angle in which the player can climb naturally")]
+        [SerializeField] private float maxGroundAngle = 25f;
+        
+        [Header("Camera Settings")]
+        [Tooltip("The target that the virtual camera will follow")]
+        [SerializeField] private GameObject followTarget;
+        [Tooltip("Look up clamp")]
+        [SerializeField] float upClamp = 90f;
+        [Tooltip("Look down clamp")]
+        [SerializeField] float downClamp = -90f;
 
         [Header("Component Registry")]
-        [SerializeField] private Rigidbody playerRigid;
-        [SerializeField] private GameObject playerBody;
+        [SerializeField] private Camera mainCamera;
         [SerializeField] private LayerMask environmentLayer;
-
+        
         private PlayerControls _playerControls;
+        private Rigidbody _playerRigidbody;
+        private Vector3 _velocity;
+        private Vector3 _contactNormal;
         private Vector2 _targetMove;
+        private float _minGroundDotProduct;
         private bool _isSprinting;
+        private bool _isJumping;
         private bool _isCrouching;
         private bool _isGrounded;
 
         private void Awake()
         {
+            OnValidate();
+            
             _playerControls = new PlayerControls();
+            _playerRigidbody = GetComponent<Rigidbody>();
             _playerControls.Player.SetMovementCallbacks(this);
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
             _playerControls.Player.SetCrouchCallbacks(this);
         }
 
-        private void Update()
-        {
-            // GetStance();
-        }
-
         private void FixedUpdate()
         {
-            GetMove();
+            InitializeSimulations();
+            Jump();
+            AdjustVelocity();
+            ResetSimulations();
         }
 
-        private void GetMove()
+        private void OnValidate()
         {
-            var currentTransform = transform;
-            var move = currentTransform.right * _targetMove.x + currentTransform.forward * _targetMove.y;
+            _minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
+        }
+
+        private void InitializeSimulations()
+        {
+            _velocity = _playerRigidbody.velocity;
+
+            if (_isGrounded)
+            {
+                _contactNormal.Normalize();
+            }
+            else
+            {
+                _contactNormal = Vector3.up;
+            }
+        }
+
+        private void ResetSimulations()
+        {
+            _playerRigidbody.velocity = _velocity;
+            _isGrounded = false;
+            _contactNormal = Vector3.zero;
+        }
+
+        private void Jump()
+        {
+            if (!_isJumping || !_isGrounded) return;
             
-            playerRigid.MovePosition(currentTransform.position + move * (Time.deltaTime * GetSpeed()));
+            _isJumping = false;
+            var jumpSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * jumpHeight);
+            var alignedSpeed = Vector3.Dot(_velocity, _contactNormal);
+            if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
+
+            _velocity += _contactNormal * jumpSpeed;
         }
 
-        private void GetStance()
+        private void EvaluateCollision(Collision collision)
         {
-            playerBody.transform.localPosition = _isCrouching ? crouchPosition : Vector3.zero;
+            for (var i = 0; i < collision.contactCount; i++)
+            {
+                var normal = collision.GetContact(i).normal;
+                if (normal.y >= _minGroundDotProduct) {
+                    _isGrounded = true;
+                    _contactNormal += normal;
+                }
+            }
         }
 
-        private float GetSpeed()
+        private void AdjustVelocity()
         {
-            var speed = movementSpeedFactor;
+            var speed = _isSprinting ? sprintSpeed : walkingSpeed;
+            
+            var xAxis = ProjectOnContactPlane(Vector3.right).normalized;
+            var zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
 
-            if (_isSprinting) speed *= sprintSpeedMultiplier;
-            if (_isCrouching) speed *= crouchSpeedMultiplier;
-
-            return speed;
+            var currentX = Vector3.Dot(_velocity, xAxis);
+            var currentZ = Vector3.Dot(_velocity, zAxis);
+            
+            var desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
+            var acceleration = _isGrounded ? maxAcceleration : maxJumpAcceleration;
+            var maxSpeedChange = acceleration * Time.deltaTime;
+            
+            var newX = Mathf.MoveTowards(currentX, desiredVelocity.x, maxSpeedChange);
+            var newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z, maxSpeedChange);
+            
+            _velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
         }
         
-        private void OnCollisionEnter(Collision collision)
+        private Vector3 ProjectOnContactPlane(Vector3 vector)
         {
-            if (collision.gameObject.layer == environmentLayer) _isGrounded = true;
+            return vector - _contactNormal * Vector3.Dot(vector, _contactNormal);
+        }
+
+        public void OnCollisionEnter(Collision collision)
+        {
+            EvaluateCollision(collision);
         }
         
-        private void OnCollisionExit(Collision collision)
+        public void OnCollisionStay(Collision collision)
         {
-            if (collision.gameObject.layer == environmentLayer) _isGrounded = false;
+            EvaluateCollision(collision);
         }
 
         public void OnMovement(InputAction.CallbackContext context)
         {
-            _targetMove = context.ReadValue<Vector2>();
+            var rawInputValue = context.ReadValue<Vector2>();
+            _targetMove = Vector2.ClampMagnitude(rawInputValue, 1f);
         }
 
         public void OnSprint(InputAction.CallbackContext context)
         {
-            _isSprinting = context.ReadValue<float>() > 0 && _isGrounded;
+            _isSprinting = context.ReadValueAsButton();
         }
 
         public void OnCrouch(InputAction.CallbackContext context)
         {
-            _isCrouching = context.ReadValue<float>() > 0 && _isGrounded;
+            _isCrouching = context.ReadValueAsButton() && _isGrounded;
         }
 
         public void OnJump(InputAction.CallbackContext context)
         {
-            if (context.ReadValue<float>() > 0)
-            {
-                playerRigid.AddForce(Vector3.up * jumpForce);
-            }
+            _isJumping = context.ReadValueAsButton();
         }
     
         private void OnEnable()
