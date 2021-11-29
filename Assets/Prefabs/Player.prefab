@@ -270,9 +270,9 @@ GameObject:
   - component: {fileID: 4937979524612763186}
   - component: {fileID: 7314491148678789774}
   - component: {fileID: 7697863581119058506}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -389,11 +389,13 @@ MonoBehaviour:
   jumpHeight: 1.2
   maxJumpAcceleration: 1
   maxGroundAngle: 25
+  maxSnapSpeed: 100
+  groundCheckDistance: 2.1
   followTarget: {fileID: 7314491148678789768}
   upClamp: 90
   downClamp: -90
   mainCamera: {fileID: 7314491148222316520}
-  environmentLayer:
+  groundLayer:
     serializedVersion: 2
     m_Bits: 64
 --- !u!1 &7418554518093966812
