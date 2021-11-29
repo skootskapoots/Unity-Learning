@@ -409,11 +409,15 @@ MonoBehaviour:
   jumpHeight: 1.2
   maxJumpAcceleration: 1
   maxGroundAngle: 25
+  maxStairsAngle: 50
   maxSnapSpeed: 100
   groundCheckDistance: 2.1
   groundLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 576
+  stairsLayer:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!1 &7418554518093966812
 GameObject:
   m_ObjectHideFlags: 0

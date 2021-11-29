@@ -26,6 +26,8 @@ namespace Player.Actions
         [Header("Ground Settings")]
         [Tooltip("Max angle in which the player can climb naturally")]
         [SerializeField] private float maxGroundAngle = 25f;
+        [Tooltip("Max angle in which the player can climb stairs")]
+        [SerializeField] private float maxStairsAngle = 50f;
         [Tooltip("Max speed for ground snapping")]
         [SerializeField] private float maxSnapSpeed = 100f;
         [Tooltip("Distance in which to check for ground in order to snap to")]
@@ -33,6 +35,7 @@ namespace Player.Actions
 
         [Header("Component Registry")]
         [SerializeField] private LayerMask groundLayer;
+        [SerializeField] private LayerMask stairsLayer;
         
         private bool IsGrounded => _groundContactCount > 0;
         
@@ -42,6 +45,7 @@ namespace Player.Actions
         private Vector3 _contactNormal;
         private Vector2 _targetMove;
         private float _minGroundDotProduct;
+        private float _minStairsDotProduct;
         private int _stepsSinceGrounded;
         private int _stepsSinceLastJump;
         private int _groundContactCount;
@@ -72,6 +76,7 @@ namespace Player.Actions
         private void OnValidate()
         {
             _minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
+            _minStairsDotProduct = Mathf.Cos(maxStairsAngle * Mathf.Deg2Rad);
         }
 
         private void InitializeSimulations()
@@ -118,8 +123,9 @@ namespace Player.Actions
         {
             for (var i = 0; i < collision.contactCount; i++)
             {
+                var minDot = GetMinDot(collision.gameObject.layer);
                 var normal = collision.GetContact(i).normal;
-                if (!(normal.y >= _minGroundDotProduct)) continue;
+                if (!(normal.y >= minDot)) continue;
                 
                 _groundContactCount++;
                 _contactNormal += normal;
@@ -151,6 +157,11 @@ namespace Player.Actions
             return vector - _contactNormal * Vector3.Dot(vector, _contactNormal);
         }
 
+        private float GetMinDot(LayerMask layer)
+        {
+            return (stairsLayer & (1 << layer)) == 0 ? _minGroundDotProduct : _minStairsDotProduct;
+        }
+
         private bool SnapToGround()
         {
             if (_stepsSinceGrounded > 1 || _stepsSinceLastJump <= 2) return false;
@@ -159,7 +170,7 @@ namespace Player.Actions
             if (speed > maxSnapSpeed) return false;
 
             if (!Physics.Raycast(_playerRigidbody.position, Vector3.down, out var hit, groundCheckDistance, groundLayer)) return false;
-            if (hit.normal.y < _minGroundDotProduct) return false;
+            if (hit.normal.y < GetMinDot(hit.collider.gameObject.layer)) return false;
 
             _groundContactCount++;
             _contactNormal = hit.normal;
