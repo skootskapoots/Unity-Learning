@@ -83,6 +83,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2593502805610314032}
   - component: {fileID: 1923014050982609247}
+  - component: {fileID: 1275642487944880469}
   m_Layer: 0
   m_Name: Head
   m_TagString: Untagged
@@ -107,6 +108,25 @@ Transform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1923014050982609247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6112823098465758179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 937798d39ece1e543aeb193f3c28b8cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isCursorLocked: 1
+  mouseSensitivity: 100
+  fieldOfView: 75
+  minClamp: -90
+  maxClamp: 90
+  playerGameObject: {fileID: 7314491148678789763}
+  playerCamera: {fileID: 7314491148222316520}
+--- !u!114 &1275642487944880469
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -391,10 +411,6 @@ MonoBehaviour:
   maxGroundAngle: 25
   maxSnapSpeed: 100
   groundCheckDistance: 2.1
-  followTarget: {fileID: 7314491148678789768}
-  upClamp: 90
-  downClamp: -90
-  mainCamera: {fileID: 7314491148222316520}
   groundLayer:
     serializedVersion: 2
     m_Bits: 64

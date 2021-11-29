@@ -30,18 +30,11 @@ namespace Player.Actions
         [SerializeField] private float maxSnapSpeed = 100f;
         [Tooltip("Distance in which to check for ground in order to snap to")]
         [SerializeField] private float groundCheckDistance = 0.6f;
-        
-        [Header("Camera Settings")]
-        [Tooltip("The target that the virtual camera will follow")]
-        [SerializeField] private GameObject followTarget;
-        [Tooltip("Look up clamp")]
-        [SerializeField] float upClamp = 90f;
-        [Tooltip("Look down clamp")]
-        [SerializeField] float downClamp = -90f;
 
         [Header("Component Registry")]
-        [SerializeField] private Camera mainCamera;
         [SerializeField] private LayerMask groundLayer;
+        
+        private bool IsGrounded => _groundContactCount > 0;
         
         private PlayerControls _playerControls;
         private Rigidbody _playerRigidbody;
@@ -55,7 +48,6 @@ namespace Player.Actions
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
-        private bool _isGrounded => _groundContactCount > 0;
 
         private void Awake()
         {
@@ -88,7 +80,7 @@ namespace Player.Actions
             _stepsSinceLastJump++;
             _velocity = _playerRigidbody.velocity;
             
-            if (_isGrounded || SnapToGround())
+            if (IsGrounded || SnapToGround())
             {
                 _stepsSinceGrounded = 0;
                 if (_groundContactCount > 1)
@@ -111,7 +103,7 @@ namespace Player.Actions
 
         private void Jump()
         {
-            if (!_isJumping || !_isGrounded) return;
+            if (!_isJumping || !IsGrounded) return;
 
             _stepsSinceLastJump = 0;
             _isJumping = false;
@@ -145,7 +137,7 @@ namespace Player.Actions
             var currentZ = Vector3.Dot(_velocity, zAxis);
             
             var desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
-            var acceleration = _isGrounded ? maxAcceleration : maxJumpAcceleration;
+            var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
             var maxSpeedChange = acceleration * Time.deltaTime;
             
             var newX = Mathf.MoveTowards(currentX, desiredVelocity.x, maxSpeedChange);
@@ -201,7 +193,7 @@ namespace Player.Actions
 
         public void OnCrouch(InputAction.CallbackContext context)
         {
-            _isCrouching = context.ReadValueAsButton() && _isGrounded;
+            _isCrouching = context.ReadValueAsButton() && IsGrounded;
         }
 
         public void OnJump(InputAction.CallbackContext context)
