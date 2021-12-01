@@ -38,17 +38,20 @@ namespace Player.Actions
         [SerializeField] private LayerMask stairsLayer;
         
         private bool IsGrounded => _groundContactCount > 0;
+        private bool IsSteep => _steepContactCount > 0;
         
         private PlayerControls _playerControls;
         private Rigidbody _playerRigidbody;
         private Vector3 _velocity;
         private Vector3 _contactNormal;
+        private Vector3 _steepNormal;
         private Vector2 _targetMove;
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
         private int _stepsSinceGrounded;
         private int _stepsSinceLastJump;
         private int _groundContactCount;
+        private int _steepContactCount;
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
@@ -85,7 +88,7 @@ namespace Player.Actions
             _stepsSinceLastJump++;
             _velocity = _playerRigidbody.velocity;
             
-            if (IsGrounded || SnapToGround())
+            if (IsGrounded || SnapToGround() || CheckSteepContacts())
             {
                 _stepsSinceGrounded = 0;
                 if (_groundContactCount > 1)
@@ -103,7 +106,9 @@ namespace Player.Actions
         {
             _playerRigidbody.velocity = _velocity;
             _groundContactCount = 0;
+            _steepContactCount = 0;
             _contactNormal = Vector3.zero;
+            _steepNormal = Vector3.zero;
         }
 
         private void Jump()
@@ -125,10 +130,16 @@ namespace Player.Actions
             {
                 var minDot = GetMinDot(collision.gameObject.layer);
                 var normal = collision.GetContact(i).normal;
-                if (!(normal.y >= minDot)) continue;
-                
-                _groundContactCount++;
-                _contactNormal += normal;
+                if (normal.y >= minDot)
+                {
+                    _groundContactCount++;
+                    _contactNormal += normal;
+                }
+                else if (normal.y > -0.01f)
+                {
+                    _steepContactCount++;
+                    _steepNormal += normal;
+                }
             }
         }
 
@@ -179,6 +190,19 @@ namespace Player.Actions
             if (dot > 0f) _velocity = (_velocity - hit.normal * dot).normalized * speed;
             
             return true;
+        }
+
+        private bool CheckSteepContacts()
+        {
+            if (_steepContactCount <= 1) return false;
+            
+            _steepNormal.Normalize();
+            if (!(_steepNormal.y >= _minGroundDotProduct)) return false;
+            
+            _groundContactCount = 1;
+            _contactNormal = _steepNormal;
+            return true;
+
         }
 
         public void OnCollisionEnter(Collision collision)
