@@ -172,8 +172,8 @@ namespace Player.Actions
         {
             var speed = _isSprinting ? sprintSpeed : walkingSpeed;
             
-            var xAxis = ProjectOnContactPlane(Vector3.right).normalized;
-            var zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
+            var xAxis = ProjectOnContactPlane(transform.right).normalized;
+            var zAxis = ProjectOnContactPlane(transform.forward).normalized;
 
             var currentX = Vector3.Dot(_velocity, xAxis);
             var currentZ = Vector3.Dot(_velocity, zAxis);
