@@ -12,7 +12,6 @@ namespace Player.Actions
 
         [Header("Mouse Settings")]
         [SerializeField] private float mouseSensitivity = 100f;
-        [SerializeField, Range(0, 5)] private int mouseSmooth = 3;
 
         [Header("Camera Settings")]
         [SerializeField] private float fieldOfView = 75f;
@@ -62,7 +61,7 @@ namespace Player.Actions
             _xRotation = Mathf.Clamp(_xRotation, minClamp, maxClamp);
             
             transform.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
-            playerGameObject.Rotate(Vector3.up * mouseX * mouseSmooth);
+            playerGameObject.Rotate(Vector3.up * mouseX);
         }
 
         public void OnLook(InputAction.CallbackContext context)
