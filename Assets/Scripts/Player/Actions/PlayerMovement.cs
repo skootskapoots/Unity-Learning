@@ -22,6 +22,8 @@ namespace Player.Actions
         [SerializeField] private float jumpHeight = 1.2f;
         [Tooltip("Maximum player jump acceleration")]
         [SerializeField] private float maxJumpAcceleration = 1f;
+        [Tooltip("Maximum amount of air jumps")]
+        [SerializeField, Range(0, 5)] private int maxAirJumps = 1;
         
         [Header("Ground Settings")]
         [Tooltip("Max angle in which the player can climb naturally")]
@@ -52,6 +54,7 @@ namespace Player.Actions
         private int _stepsSinceLastJump;
         private int _groundContactCount;
         private int _steepContactCount;
+        private int _jumpPhase;
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
@@ -87,14 +90,12 @@ namespace Player.Actions
             _stepsSinceGrounded++;
             _stepsSinceLastJump++;
             _velocity = _playerRigidbody.velocity;
-            
+
             if (IsGrounded || SnapToGround() || CheckSteepContacts())
             {
                 _stepsSinceGrounded = 0;
-                if (_groundContactCount > 1)
-                {
-                    _contactNormal.Normalize();
-                }
+                if (_stepsSinceLastJump > 1) _jumpPhase = 0;
+                if (_groundContactCount > 1) _contactNormal.Normalize();
             }
             else
             {
@@ -113,15 +114,39 @@ namespace Player.Actions
 
         private void Jump()
         {
-            if (!_isJumping || !IsGrounded) return;
+            if (!_isJumping) return;
+            
+            _isJumping = false;
+            Vector3 jumpDirection;
+
+            if (IsGrounded)
+            {
+                jumpDirection = _contactNormal;
+            }
+            else if (IsSteep)
+            {
+                jumpDirection = _steepNormal;
+                _jumpPhase = 0;
+            }
+            else if (maxAirJumps > 0 && _jumpPhase <= maxAirJumps)
+            {
+                if (_jumpPhase == 0) _jumpPhase = 1;
+                jumpDirection = _contactNormal;
+            }
+            else
+            {
+                return;
+            }
 
             _stepsSinceLastJump = 0;
-            _isJumping = false;
+            _jumpPhase++;
+            jumpDirection = (jumpDirection + Vector3.up).normalized;
+            
             var jumpSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * jumpHeight);
-            var alignedSpeed = Vector3.Dot(_velocity, _contactNormal);
+            var alignedSpeed = Vector3.Dot(_velocity, jumpDirection);
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
 
-            _velocity += _contactNormal * jumpSpeed;
+            _velocity += jumpDirection * jumpSpeed;
         }
 
         private void EvaluateCollision(Collision collision)
