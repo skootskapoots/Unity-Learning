@@ -74,7 +74,13 @@ namespace Player.Actions
         private void FixedUpdate()
         {
             InitializeSimulations();
-            Jump();
+            
+            if (!_isJumping)
+            {
+                _isJumping = false;
+                Jump();
+            }
+            
             AdjustVelocity();
             ResetSimulations();
         }
@@ -114,9 +120,6 @@ namespace Player.Actions
 
         private void Jump()
         {
-            if (!_isJumping) return;
-            
-            _isJumping = false;
             Vector3 jumpDirection;
 
             if (IsGrounded)
