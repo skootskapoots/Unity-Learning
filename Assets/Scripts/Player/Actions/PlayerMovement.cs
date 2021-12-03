@@ -16,6 +16,12 @@ namespace Player.Actions
         [SerializeField] private float sprintSpeed = 6f;
         [Tooltip("Maximum player acceleration and deceleration")]
         [SerializeField] private float maxAcceleration = 10f;
+        
+        [Header("Crouch Settings")]
+        [Tooltip("Jump height in meters")]
+        [SerializeField] private float crouchHeight = 1.2f;
+        [Tooltip("Crouching speed (m/s)")]
+        [SerializeField] private float crouchSpeed = 2f;
 
         [Header("Jump Settings")]
         [Tooltip("Jump height in meters")]
@@ -75,7 +81,7 @@ namespace Player.Actions
         {
             InitializeSimulations();
             
-            if (!_isJumping)
+            if (_isJumping)
             {
                 _isJumping = false;
                 Jump();
@@ -173,7 +179,10 @@ namespace Player.Actions
 
         private void AdjustVelocity()
         {
-            var speed = _isSprinting ? sprintSpeed : walkingSpeed;
+            float speed;
+            if (_isSprinting && !_isCrouching) speed = sprintSpeed;
+            else if (_isCrouching && !_isSprinting) speed = crouchSpeed;
+            else speed = walkingSpeed;
             
             var xAxis = ProjectOnContactPlane(transform.right).normalized;
             var zAxis = ProjectOnContactPlane(transform.forward).normalized;

@@ -374,6 +374,8 @@ MonoBehaviour:
   walkingSpeed: 4
   sprintSpeed: 8
   maxAcceleration: 20
+  crouchHeight: 1.2
+  crouchSpeed: 2
   jumpHeight: 1.4
   maxJumpAcceleration: 1
   maxAirJumps: 1
