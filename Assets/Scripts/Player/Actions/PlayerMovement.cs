@@ -1,3 +1,4 @@
+using System;
 using Inputs;
 using Interfaces;
 using UnityEngine;
@@ -50,10 +51,13 @@ namespace Player.Actions
         
         private PlayerControls _playerControls;
         private Rigidbody _playerRigidbody;
+        private CapsuleCollider _playerCollider;
         private Vector3 _velocity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
         private Vector2 _targetMove;
+        private Vector3 _initialColliderCenter;
+        private float _initialColliderHeight;
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
         private int _stepsSinceGrounded;
@@ -71,22 +75,27 @@ namespace Player.Actions
             
             _playerControls = new PlayerControls();
             _playerRigidbody = GetComponent<Rigidbody>();
+            _playerCollider = GetComponent<CapsuleCollider>();
             _playerControls.Player.SetMovementCallbacks(this);
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
             _playerControls.Player.SetCrouchCallbacks(this);
+
+            _initialColliderHeight = _playerCollider.height;
+            _initialColliderCenter = _playerCollider.center;
         }
 
         private void FixedUpdate()
         {
             InitializeSimulations();
             
-            if (_isJumping)
+            if (_isJumping && !_isCrouching)
             {
                 _isJumping = false;
                 Jump();
             }
-            
+
+            Crouch();
             AdjustVelocity();
             ResetSimulations();
         }
@@ -122,6 +131,27 @@ namespace Player.Actions
             _steepContactCount = 0;
             _contactNormal = Vector3.zero;
             _steepNormal = Vector3.zero;
+        }
+
+        private void Crouch()
+        {
+            switch (_isCrouching)
+            {
+                case true when !Mathf.Approximately(_playerCollider.height, crouchHeight):
+                {
+                    _playerCollider.height = crouchHeight;
+                
+                    var center = _playerCollider.center;
+                    _playerCollider.center = new Vector3(center.x, 0.25f, center.z);
+                    break;
+                }
+                case false when Mathf.Approximately(_playerCollider.height, crouchHeight):
+                {
+                    _playerCollider.height = _initialColliderHeight;
+                    _playerCollider.center = new Vector3(_initialColliderCenter.x, 0f, _initialColliderCenter.z);
+                    break;
+                }
+            }
         }
 
         private void Jump()
