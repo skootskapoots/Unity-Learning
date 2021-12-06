@@ -45,7 +45,8 @@ namespace Player.Actions
         [Header("Component Registry")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private LayerMask stairsLayer;
-        
+        [SerializeField] private Transform playerInputSpace = default;
+
         private bool IsGrounded => _groundContactCount > 0;
         private bool IsSteep => _steepContactCount > 0;
         
@@ -55,8 +56,11 @@ namespace Player.Actions
         private Vector3 _velocity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
-        private Vector2 _targetMove;
         private Vector3 _initialColliderCenter;
+        private Vector3 _upAxis;
+        private Vector3 _rightAxis;
+        private Vector3 _forwardAxis;
+        private Vector2 _targetMove;
         private float _initialColliderHeight;
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
@@ -85,8 +89,24 @@ namespace Player.Actions
             _initialColliderCenter = _playerCollider.center;
         }
 
+        private void Update()
+        {
+            if (playerInputSpace)
+            {
+                _rightAxis = ProjectDirectionOnPlane(playerInputSpace.right, _upAxis);
+                _forwardAxis = ProjectDirectionOnPlane(playerInputSpace.forward, _upAxis);
+            }
+            else
+            {
+                _rightAxis = ProjectDirectionOnPlane(transform.right, _upAxis);
+                _forwardAxis = ProjectDirectionOnPlane(transform.forward, _upAxis);
+            }
+        }
+
         private void FixedUpdate()
         {
+            _upAxis = -Physics.gravity.normalized;
+            
             InitializeSimulations();
             
             if (_isJumping && !_isCrouching)
@@ -120,7 +140,7 @@ namespace Player.Actions
             }
             else
             {
-                _contactNormal = Vector3.up;
+                _contactNormal = _upAxis;
             }
         }
 
@@ -179,9 +199,9 @@ namespace Player.Actions
 
             _stepsSinceLastJump = 0;
             _jumpPhase++;
-            jumpDirection = (jumpDirection + Vector3.up).normalized;
+            jumpDirection = (jumpDirection + _upAxis).normalized;
             
-            var jumpSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * jumpHeight);
+            var jumpSpeed = Mathf.Sqrt(2f * Physics.gravity.magnitude * jumpHeight);
             var alignedSpeed = Vector3.Dot(_velocity, jumpDirection);
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
 
@@ -194,12 +214,13 @@ namespace Player.Actions
             {
                 var minDot = GetMinDot(collision.gameObject.layer);
                 var normal = collision.GetContact(i).normal;
-                if (normal.y >= minDot)
+                var upDot = Vector3.Dot(_upAxis, normal);
+                if (upDot >= minDot)
                 {
                     _groundContactCount++;
                     _contactNormal += normal;
                 }
-                else if (normal.y > -0.01f)
+                else if (upDot > -0.01f)
                 {
                     _steepContactCount++;
                     _steepNormal += normal;
@@ -214,8 +235,8 @@ namespace Player.Actions
             else if (_isCrouching && !_isSprinting) speed = crouchSpeed;
             else speed = walkingSpeed;
             
-            var xAxis = ProjectOnContactPlane(transform.right).normalized;
-            var zAxis = ProjectOnContactPlane(transform.forward).normalized;
+            var xAxis = ProjectDirectionOnPlane(_rightAxis, _contactNormal);
+            var zAxis = ProjectDirectionOnPlane(_forwardAxis, _contactNormal);
 
             var currentX = Vector3.Dot(_velocity, xAxis);
             var currentZ = Vector3.Dot(_velocity, zAxis);
@@ -230,9 +251,9 @@ namespace Player.Actions
             _velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
         }
         
-        private Vector3 ProjectOnContactPlane(Vector3 vector)
+        private Vector3 ProjectDirectionOnPlane(Vector3 direction, Vector3 normal)
         {
-            return vector - _contactNormal * Vector3.Dot(vector, _contactNormal);
+            return direction - normal * Vector3.Dot(direction, normal);
         }
 
         private float GetMinDot(LayerMask layer)
@@ -247,8 +268,10 @@ namespace Player.Actions
             var speed = _velocity.magnitude;
             if (speed > maxSnapSpeed) return false;
 
-            if (!Physics.Raycast(_playerRigidbody.position, Vector3.down, out var hit, groundCheckDistance, groundLayer)) return false;
-            if (hit.normal.y < GetMinDot(hit.collider.gameObject.layer)) return false;
+            if (!Physics.Raycast(_playerRigidbody.position, -_upAxis, out var hit, groundCheckDistance, groundLayer)) return false;
+
+            var upDot = Vector3.Dot(_upAxis, hit.normal);
+            if (upDot < GetMinDot(hit.collider.gameObject.layer)) return false;
 
             _groundContactCount++;
             _contactNormal = hit.normal;
@@ -264,7 +287,8 @@ namespace Player.Actions
             if (_steepContactCount <= 1) return false;
             
             _steepNormal.Normalize();
-            if (!(_steepNormal.y >= _minGroundDotProduct)) return false;
+            var upDot = Vector3.Dot(_upAxis, _steepNormal);
+            if (!(upDot >= _minGroundDotProduct)) return false;
             
             _groundContactCount = 1;
             _contactNormal = _steepNormal;

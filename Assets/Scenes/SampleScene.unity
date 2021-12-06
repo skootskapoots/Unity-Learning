@@ -7847,18 +7847,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 7314491148678789772, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
-    - target: {fileID: 7314491148678789773, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7314491148678789773, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 2100000, guid: 09fb999a25a76a946831659009197c09, type: 2}
     - target: {fileID: 7421238532885146498, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: m_RootOrder
       value: 0

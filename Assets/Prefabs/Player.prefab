@@ -336,7 +336,7 @@ MonoBehaviour:
   crouchSpeed: 2
   jumpHeight: 1.8
   maxJumpAcceleration: 1
-  maxAirJumps: 0
+  maxAirJumps: 1
   maxGroundAngle: 25
   maxStairsAngle: 50
   maxSnapSpeed: 100
