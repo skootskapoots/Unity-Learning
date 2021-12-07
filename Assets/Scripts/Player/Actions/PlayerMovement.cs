@@ -1,8 +1,8 @@
-using System;
 using Inputs;
 using Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using World.Gravity;
 
 namespace Player.Actions
 {
@@ -75,8 +75,6 @@ namespace Player.Actions
 
         private void Awake()
         {
-            OnValidate();
-            
             _playerControls = new PlayerControls();
             _playerRigidbody = GetComponent<Rigidbody>();
             _playerCollider = GetComponent<CapsuleCollider>();
@@ -84,9 +82,12 @@ namespace Player.Actions
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
             _playerControls.Player.SetCrouchCallbacks(this);
-
+            
+            _playerRigidbody.useGravity = false;
             _initialColliderHeight = _playerCollider.height;
             _initialColliderCenter = _playerCollider.center;
+            
+            OnValidate();
         }
 
         private void Update()
@@ -105,18 +106,19 @@ namespace Player.Actions
 
         private void FixedUpdate()
         {
-            _upAxis = -Physics.gravity.normalized;
+            var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
             
             InitializeSimulations();
-            
+            AdjustVelocity();
+            Crouch();
             if (_isJumping && !_isCrouching)
             {
                 _isJumping = false;
-                Jump();
+                Jump(gravity);
             }
+            _velocity += gravity * Time.deltaTime;
+            _playerRigidbody.velocity = _velocity;
 
-            Crouch();
-            AdjustVelocity();
             ResetSimulations();
         }
 
@@ -174,7 +176,7 @@ namespace Player.Actions
             }
         }
 
-        private void Jump()
+        private void Jump(Vector3 gravity)
         {
             Vector3 jumpDirection;
 
@@ -201,7 +203,7 @@ namespace Player.Actions
             _jumpPhase++;
             jumpDirection = (jumpDirection + _upAxis).normalized;
             
-            var jumpSpeed = Mathf.Sqrt(2f * Physics.gravity.magnitude * jumpHeight);
+            var jumpSpeed = Mathf.Sqrt(2f * gravity.magnitude * jumpHeight);
             var alignedSpeed = Vector3.Dot(_velocity, jumpDirection);
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
 

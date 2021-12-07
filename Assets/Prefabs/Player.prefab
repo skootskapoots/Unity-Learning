@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2593502805610314032}
   - component: {fileID: 1923014050982609247}
-  - component: {fileID: 1275642487944880469}
   m_Layer: 0
   m_Name: Head
   m_TagString: Untagged
@@ -52,25 +51,6 @@ MonoBehaviour:
   maxClamp: 90
   playerGameObject: {fileID: 7314491148678789763}
   playerCamera: {fileID: 7314491148222316520}
---- !u!114 &1275642487944880469
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6112823098465758179}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 937798d39ece1e543aeb193f3c28b8cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isCursorLocked: 1
-  mouseSensitivity: 10
-  fieldOfView: 75
-  minClamp: -90
-  maxClamp: 90
-  playerGameObject: {fileID: 7314491148678789763}
-  playerCamera: {fileID: 7314491148222316520}
 --- !u!1 &7314491148222316522
 GameObject:
   m_ObjectHideFlags: 0
@@ -82,7 +62,6 @@ GameObject:
   - component: {fileID: 7314491148222316527}
   - component: {fileID: 7314491148222316520}
   - component: {fileID: 7314491148222316521}
-  - component: {fileID: 8127248912370545868}
   - component: {fileID: 766388581432068173}
   m_Layer: 0
   m_Name: Main Camera
@@ -156,20 +135,6 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7314491148222316522}
   m_Enabled: 1
---- !u!114 &8127248912370545868
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7314491148222316522}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a66380ba4111314ebdf83ab685e4136, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  range: 50
-  accuracy: 23
 --- !u!114 &766388581432068173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -347,3 +312,4 @@ MonoBehaviour:
   stairsLayer:
     serializedVersion: 2
     m_Bits: 512
+  playerInputSpace: {fileID: 0}
