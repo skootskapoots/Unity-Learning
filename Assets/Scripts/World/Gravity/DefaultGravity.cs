@@ -11,13 +11,15 @@ namespace World.Gravity
 
         public static Vector3 GetGravity(Vector3 position, out Vector3 upAxis)
         {
-            upAxis = position.normalized;
+            var up = position.normalized;
+            upAxis = Physics.gravity.y < 0f ? up : -up;
             return upAxis * Physics.gravity.y;
         }
 
         public static Vector3 GetUpAxis(Vector3 position)
         {
-            return position.normalized;
+            var up = position.normalized;
+            return Physics.gravity.y < 0f ? up : -up;
         }
     }
 }
