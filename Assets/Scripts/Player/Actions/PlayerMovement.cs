@@ -45,7 +45,7 @@ namespace Player.Actions
         [Header("Component Registry")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private LayerMask stairsLayer;
-        [SerializeField] private Transform playerInputSpace = default;
+        [SerializeField] private Transform playerInputSpace;
 
         private bool IsGrounded => _groundContactCount > 0;
         private bool IsSteep => _steepContactCount > 0;
@@ -54,6 +54,7 @@ namespace Player.Actions
         private Rigidbody _playerRigidbody;
         private CapsuleCollider _playerCollider;
         private Vector3 _velocity;
+        private Vector3 _desiredVelocity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
         private Vector3 _initialColliderCenter;
@@ -102,6 +103,16 @@ namespace Player.Actions
                 _rightAxis = ProjectDirectionOnPlane(transform.right, _upAxis);
                 _forwardAxis = ProjectDirectionOnPlane(transform.forward, _upAxis);
             }
+            
+            float speed;
+            if (_isSprinting && !_isCrouching)
+                speed = sprintSpeed;
+            else if (_isCrouching && !_isSprinting)
+                speed = crouchSpeed;
+            else
+                speed = walkingSpeed;
+            
+            _desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
         }
 
         private void FixedUpdate()
@@ -232,23 +243,17 @@ namespace Player.Actions
 
         private void AdjustVelocity()
         {
-            float speed;
-            if (_isSprinting && !_isCrouching) speed = sprintSpeed;
-            else if (_isCrouching && !_isSprinting) speed = crouchSpeed;
-            else speed = walkingSpeed;
-            
             var xAxis = ProjectDirectionOnPlane(_rightAxis, _contactNormal);
             var zAxis = ProjectDirectionOnPlane(_forwardAxis, _contactNormal);
 
             var currentX = Vector3.Dot(_velocity, xAxis);
             var currentZ = Vector3.Dot(_velocity, zAxis);
             
-            var desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
             var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
             var maxSpeedChange = acceleration * Time.deltaTime;
             
-            var newX = Mathf.MoveTowards(currentX, desiredVelocity.x, maxSpeedChange);
-            var newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z, maxSpeedChange);
+            var newX = Mathf.MoveTowards(currentX, _desiredVelocity.x, maxSpeedChange);
+            var newZ = Mathf.MoveTowards(currentZ, _desiredVelocity.z, maxSpeedChange);
             
             _velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
         }

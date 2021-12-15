@@ -7,7 +7,7 @@ namespace World.Utilities
     [RequireComponent(typeof(Rigidbody))]
     public class DefaultRigidBodyGravity : MonoBehaviour
     {
-        [Header("Physics Settings")]
+        [Header("Gravity Settings")]
         [Tooltip("Determine if a body should be allowed to sleep")]
         [SerializeField] private bool floatToSleep = false;
         
