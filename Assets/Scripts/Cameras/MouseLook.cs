@@ -2,8 +2,9 @@ using Inputs;
 using Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using World.Gravity;
 
-namespace Player.Actions
+namespace Cameras
 {
     public class MouseLook : MonoBehaviour, IPlayerActionLook
     {
@@ -20,17 +21,18 @@ namespace Player.Actions
 
         [Header("Component Registry")]
         [SerializeField] private Transform playerGameObject;
+        [SerializeField] private Transform playerHead;
         [SerializeField] private Camera playerCamera;
         
         private PlayerControls _playerControls;
         private Vector2 _mouseInput;
-        private float _xRotation = 0f;
+        private float _xRotation;
         
         private void Awake()
         {
             _playerControls = new PlayerControls();
             _playerControls.Player.SetLookCallbacks(this);
-            
+
         }
         
         private void Start()
@@ -60,8 +62,9 @@ namespace Player.Actions
             _xRotation -= mouseY;
             _xRotation = Mathf.Clamp(_xRotation, minClamp, maxClamp);
             
-            transform.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
-            playerGameObject.Rotate(Vector3.up * mouseX);
+            var up = DefaultGravity.GetUpAxis(playerGameObject.position);
+            playerHead.transform.localRotation = Quaternion.Euler(_xRotation, 0f, up.z);
+            playerGameObject.Rotate(up * mouseX);
         }
 
         public void OnLook(InputAction.CallbackContext context)
