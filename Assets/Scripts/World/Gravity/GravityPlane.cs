@@ -1,6 +1,7 @@
 using UnityEngine;
+using World.Utilities;
 
-namespace World.Utilities
+namespace World.Gravity
 {
     public class GravityPlane : GravitySource
     {
