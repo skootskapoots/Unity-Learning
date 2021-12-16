@@ -17,6 +17,8 @@ namespace Player.Actions
         [SerializeField] private float sprintSpeed = 6f;
         [Tooltip("Maximum player acceleration and deceleration")]
         [SerializeField] private float maxAcceleration = 10f;
+        [Tooltip("Alignment speed of the up direction based on gravity")]
+        [SerializeField, Min(0f)] private float upAlignmentSpeed = 360f;
         
         [Header("Crouch Settings")]
         [Tooltip("Jump height in meters")]
@@ -53,6 +55,7 @@ namespace Player.Actions
         private PlayerControls _playerControls;
         private Rigidbody _playerRigidbody;
         private CapsuleCollider _playerCollider;
+        private Quaternion _gravityAlignment = Quaternion.identity;
         private Vector3 _velocity;
         private Vector3 _desiredVelocity;
         private Vector3 _contactNormal;
@@ -120,6 +123,7 @@ namespace Player.Actions
             var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
             
             InitializeSimulations();
+            UpdateGravityAlignment();
             AdjustVelocity();
             Crouch();
             if (_isJumping && !_isCrouching)
@@ -129,6 +133,7 @@ namespace Player.Actions
             }
             _velocity += gravity * Time.deltaTime;
             _playerRigidbody.velocity = _velocity;
+            transform.SetPositionAndRotation(transform.position, _gravityAlignment);
 
             ResetSimulations();
         }
@@ -258,7 +263,21 @@ namespace Player.Actions
             _velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
         }
         
-        private Vector3 ProjectDirectionOnPlane(Vector3 direction, Vector3 normal)
+        private void UpdateGravityAlignment()
+        {
+            var fromUp = _gravityAlignment * Vector3.up;
+            var toUp = DefaultGravity.GetUpAxis(transform.position);
+
+            var dot = Mathf.Clamp(Vector3.Dot(fromUp, toUp), -1f, 1f);
+            var angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
+            var maxAngle = upAlignmentSpeed * Time.deltaTime;
+
+            var newAlignment = Quaternion.FromToRotation(fromUp, toUp) * _gravityAlignment;
+
+            _gravityAlignment = angle <= maxAngle ? newAlignment : Quaternion.SlerpUnclamped(_gravityAlignment, newAlignment, maxAngle / angle);
+        }
+        
+        private static Vector3 ProjectDirectionOnPlane(Vector3 direction, Vector3 normal)
         {
             return direction - normal * Vector3.Dot(direction, normal);
         }

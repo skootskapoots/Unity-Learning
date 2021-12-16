@@ -162,7 +162,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: 9.81
   outerRadius: 8
-  outerFalloffRadius: 15
+  outerFalloffRadius: 14
   innerRadius: 5
   innerFalloffRadius: 1
 --- !u!135 &655464016
@@ -668,7 +668,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: 9.81
   outerRadius: 8
-  outerFalloffRadius: 15
+  outerFalloffRadius: 12
   innerRadius: 1
   innerFalloffRadius: 1
 --- !u!135 &1704304932

@@ -41,7 +41,7 @@ namespace Cameras
         private PlayerControls _playerControls;
         private Camera _regularCamera;
         private Quaternion _gravityAlignment = Quaternion.identity;
-        private Quaternion _orbitRoation;
+        private Quaternion _orbitRotation;
         private Vector3 _focusPoint;
         private Vector3 _previousFocusPoint;
         private Vector2 _mouseInput;
@@ -69,7 +69,7 @@ namespace Cameras
             _regularCamera = GetComponent<Camera>();
             
             _focusPoint = target.position;
-            transform.localRotation = _orbitRoation * Quaternion.Euler(_orbitAngles);
+            transform.localRotation = _orbitRotation * Quaternion.Euler(_orbitAngles);
         }
 
         private void LateUpdate()
@@ -80,10 +80,10 @@ namespace Cameras
             if (ManualRotation() || AutomaticRotation())
             {
                 ConstrainAngles();
-                _orbitRoation = Quaternion.Euler(_orbitAngles);
+                _orbitRotation = Quaternion.Euler(_orbitAngles);
             }
 
-            var lookRotation = _gravityAlignment * _orbitRoation;
+            var lookRotation = _gravityAlignment * _orbitRotation;
             var lookDirection = lookRotation * Vector3.forward;
             var lookPosition = _focusPoint - lookDirection * followDistance;
 
