@@ -21,10 +21,18 @@ namespace Player.Actions
         [SerializeField, Min(0f)] private float upAlignmentSpeed = 360f;
         
         [Header("Crouch Settings")]
-        [Tooltip("Jump height in meters")]
+        [Tooltip("Crouch height in meters")]
         [SerializeField] private float crouchHeight = 1.2f;
         [Tooltip("Crouching speed (m/s)")]
         [SerializeField] private float crouchSpeed = 2f;
+        
+        [Header("Climb Settings")]
+        [Tooltip("Maximum angle in which the player can climb")]
+        [SerializeField, Range(90f, 180f)] private float maxClimbAngle = 140f;
+        [Tooltip("Climbing speed (m/s)")]
+        [SerializeField] private float climbSpeed = 2f;
+        [Tooltip("Maximum player climb acceleration")]
+        [SerializeField] private float maxClimbAcceleration = 20f;
 
         [Header("Jump Settings")]
         [Tooltip("Jump height in meters")]
@@ -47,6 +55,7 @@ namespace Player.Actions
         [Header("Component Registry")]
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private LayerMask stairsLayer;
+        [SerializeField] private LayerMask climbLayer;
         [SerializeField] private Transform playerInputSpace;
 
         private bool IsGrounded => _groundContactCount > 0;
@@ -62,6 +71,8 @@ namespace Player.Actions
         private Vector3 _desiredVelocity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
+        private Vector3 _climbNormal;
+        private Vector3 _lastClimbNormal;
         private Vector3 _connectedVelocity;
         private Vector3 _connectedWorldPosition;
         private Vector3 _connectedLocalPosition;
@@ -73,14 +84,19 @@ namespace Player.Actions
         private float _initialColliderHeight;
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
+        private float _minClimbDotProduct;
         private int _stepsSinceGrounded;
         private int _stepsSinceLastJump;
         private int _groundContactCount;
         private int _steepContactCount;
+        private int _climbContactCount;
         private int _jumpPhase;
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
+        private bool _shouldClimb = true;
+
+        private bool IsClimbing => _climbContactCount > 0 && _stepsSinceLastJump > 2;
 
         private void Awake()
         {
@@ -111,16 +127,6 @@ namespace Player.Actions
                 _rightAxis = ProjectDirectionOnPlane(transform.right, _upAxis);
                 _forwardAxis = ProjectDirectionOnPlane(transform.forward, _upAxis);
             }
-            
-            float speed;
-            if (_isSprinting && !_isCrouching)
-                speed = sprintSpeed;
-            else if (_isCrouching && !_isSprinting)
-                speed = crouchSpeed;
-            else
-                speed = walkingSpeed;
-            
-            _desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
         }
 
         private void FixedUpdate()
@@ -136,7 +142,18 @@ namespace Player.Actions
                 _isJumping = false;
                 Jump(gravity);
             }
-            _velocity += gravity * Time.deltaTime;
+
+            if (IsClimbing)
+                _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
+            else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
+                _velocity += _contactNormal * (Vector3.Dot(gravity, _contactNormal) * Time.deltaTime);
+            else if (_shouldClimb && IsGrounded)
+                _velocity += (gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
+            else
+                _velocity += gravity * Time.deltaTime;
+            
+            Debug.Log(_velocity.sqrMagnitude);
+            
             _playerRigidbody.velocity = _velocity;
             transform.SetPositionAndRotation(transform.position, _gravityAlignment);
 
@@ -147,6 +164,7 @@ namespace Player.Actions
         {
             _minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
             _minStairsDotProduct = Mathf.Cos(maxStairsAngle * Mathf.Deg2Rad);
+            _minClimbDotProduct = Mathf.Cos(maxClimbAngle * Mathf.Deg2Rad);
         }
 
         private void InitializeSimulations()
@@ -155,7 +173,7 @@ namespace Player.Actions
             _stepsSinceLastJump++;
             _velocity = _playerRigidbody.velocity;
 
-            if (IsGrounded || SnapToGround() || CheckSteepContacts())
+            if (CheckClimbingContacts() || IsGrounded || SnapToGround() || CheckSteepContacts())
             {
                 _stepsSinceGrounded = 0;
                 if (_stepsSinceLastJump > 1) _jumpPhase = 0;
@@ -176,8 +194,10 @@ namespace Player.Actions
             _playerRigidbody.velocity = _velocity;
             _groundContactCount = 0;
             _steepContactCount = 0;
+            _climbContactCount = 0;
             _contactNormal = Vector3.zero;
             _steepNormal = Vector3.zero;
+            _climbNormal = Vector3.zero;
             _connectedVelocity = Vector3.zero;
             _previousConnectedBody = _connectedBody;
             _connectedBody = null;
@@ -242,7 +262,8 @@ namespace Player.Actions
         {
             for (var i = 0; i < collision.contactCount; i++)
             {
-                var minDot = GetMinDot(collision.gameObject.layer);
+                var layer = collision.gameObject.layer;
+                var minDot = GetMinDot(layer);
                 var normal = collision.GetContact(i).normal;
                 var upDot = Vector3.Dot(_upAxis, normal);
                 if (upDot >= minDot)
@@ -251,26 +272,66 @@ namespace Player.Actions
                     _contactNormal += normal;
                     _connectedBody = collision.rigidbody;
                 }
-                else if (upDot > -0.01f)
+                else
                 {
-                    _steepContactCount++;
-                    _steepNormal += normal;
-                    if (_groundContactCount == 0)
+                    if (upDot > -0.01f)
+                    {
+                        _steepContactCount++;
+                        _steepNormal += normal;
+                        if (_groundContactCount == 0)
+                            _connectedBody = collision.rigidbody;
+                    }
+
+                    if (_shouldClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
+                    {
+                        _climbContactCount++;
+                        _climbNormal += normal;
+                        _lastClimbNormal = normal;
                         _connectedBody = collision.rigidbody;
+                    }
                 }
             }
         }
 
         private void AdjustVelocity()
         {
-            var xAxis = ProjectDirectionOnPlane(_rightAxis, _contactNormal);
-            var zAxis = ProjectDirectionOnPlane(_forwardAxis, _contactNormal);
+            float speed;
+            var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
+            if (_isSprinting && !_isCrouching)
+                speed = sprintSpeed;
+            else if (_isCrouching && !_isSprinting)
+                speed = crouchSpeed;
+            else if (IsClimbing)
+            {
+                acceleration = maxClimbAcceleration;
+                speed = climbSpeed;
+            }
+            else
+                speed = walkingSpeed;
+            
+            _desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
+            
+            Vector3 xAxis;
+            Vector3 zAxis;
+
+            if (IsClimbing)
+            {
+                xAxis = Vector3.Cross(_contactNormal, _upAxis);
+                zAxis = _upAxis;
+            }
+            else
+            {
+                xAxis = _rightAxis;
+                zAxis = _forwardAxis;
+            }
+
+            xAxis = ProjectDirectionOnPlane(xAxis, _contactNormal);
+            zAxis = ProjectDirectionOnPlane(zAxis, _contactNormal);
 
             var relativeVelocity = _velocity - _connectedVelocity;
             var currentX = Vector3.Dot(relativeVelocity, xAxis);
             var currentZ = Vector3.Dot(relativeVelocity, zAxis);
             
-            var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
             var maxSpeedChange = acceleration * Time.deltaTime;
             
             var newX = Mathf.MoveTowards(currentX, _desiredVelocity.x, maxSpeedChange);
@@ -335,6 +396,23 @@ namespace Player.Actions
             
             _groundContactCount = 1;
             _contactNormal = _steepNormal;
+            return true;
+
+        }
+
+        private bool CheckClimbingContacts()
+        {
+            if (!IsClimbing) return false;
+            
+            if (_climbContactCount > 1)
+            {
+                _climbNormal.Normalize();
+                var upDot = Vector3.Dot(_upAxis, _climbNormal);
+                if (upDot >= _minGroundDotProduct)
+                    _climbNormal = _lastClimbNormal;
+            }
+            _groundContactCount = 1;
+            _contactNormal = _climbNormal;
             return true;
 
         }
