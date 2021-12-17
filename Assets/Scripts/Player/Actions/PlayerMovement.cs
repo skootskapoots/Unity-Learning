@@ -54,12 +54,17 @@ namespace Player.Actions
         
         private PlayerControls _playerControls;
         private Rigidbody _playerRigidbody;
+        private Rigidbody _connectedBody;
+        private Rigidbody _previousConnectedBody;
         private CapsuleCollider _playerCollider;
         private Quaternion _gravityAlignment = Quaternion.identity;
         private Vector3 _velocity;
         private Vector3 _desiredVelocity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
+        private Vector3 _connectedVelocity;
+        private Vector3 _connectedWorldPosition;
+        private Vector3 _connectedLocalPosition;
         private Vector3 _initialColliderCenter;
         private Vector3 _upAxis;
         private Vector3 _rightAxis;
@@ -160,6 +165,10 @@ namespace Player.Actions
             {
                 _contactNormal = _upAxis;
             }
+            
+            if (_connectedBody)
+                if (_connectedBody.isKinematic || _connectedBody.mass >= _playerRigidbody.mass)
+                    UpdateConnectedState();
         }
 
         private void ResetSimulations()
@@ -169,6 +178,9 @@ namespace Player.Actions
             _steepContactCount = 0;
             _contactNormal = Vector3.zero;
             _steepNormal = Vector3.zero;
+            _connectedVelocity = Vector3.zero;
+            _previousConnectedBody = _connectedBody;
+            _connectedBody = null;
         }
 
         private void Crouch()
@@ -237,11 +249,14 @@ namespace Player.Actions
                 {
                     _groundContactCount++;
                     _contactNormal += normal;
+                    _connectedBody = collision.rigidbody;
                 }
                 else if (upDot > -0.01f)
                 {
                     _steepContactCount++;
                     _steepNormal += normal;
+                    if (_groundContactCount == 0)
+                        _connectedBody = collision.rigidbody;
                 }
             }
         }
@@ -251,8 +266,9 @@ namespace Player.Actions
             var xAxis = ProjectDirectionOnPlane(_rightAxis, _contactNormal);
             var zAxis = ProjectDirectionOnPlane(_forwardAxis, _contactNormal);
 
-            var currentX = Vector3.Dot(_velocity, xAxis);
-            var currentZ = Vector3.Dot(_velocity, zAxis);
+            var relativeVelocity = _velocity - _connectedVelocity;
+            var currentX = Vector3.Dot(relativeVelocity, xAxis);
+            var currentZ = Vector3.Dot(relativeVelocity, zAxis);
             
             var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
             var maxSpeedChange = acceleration * Time.deltaTime;
@@ -304,7 +320,8 @@ namespace Player.Actions
             
             var dot = Vector3.Dot(_velocity, hit.normal);
             if (dot > 0f) _velocity = (_velocity - hit.normal * dot).normalized * speed;
-            
+
+            _connectedBody = hit.rigidbody;
             return true;
         }
 
@@ -320,6 +337,18 @@ namespace Player.Actions
             _contactNormal = _steepNormal;
             return true;
 
+        }
+
+        private void UpdateConnectedState()
+        {
+            if (_connectedBody == _previousConnectedBody)
+            {
+                var connectionMovement = _connectedBody.transform.TransformPoint(_connectedLocalPosition) - _connectedWorldPosition;
+                _connectedVelocity = connectionMovement / Time.deltaTime;
+            }
+            
+            _connectedWorldPosition = _playerRigidbody.position;
+            _connectedLocalPosition = _connectedBody.transform.InverseTransformPoint(_connectedWorldPosition);
         }
 
         public void OnCollisionEnter(Collision collision)
