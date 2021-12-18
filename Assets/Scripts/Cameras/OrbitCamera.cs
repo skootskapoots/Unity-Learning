@@ -10,6 +10,9 @@ namespace Cameras
     [RequireComponent(typeof(Camera))]
     public class OrbitCamera : MonoBehaviour, IPlayerActionLook
     {
+        [Header("Cursor Settings")]
+        [SerializeField] private bool isCursorLocked = true;
+        
         [Header("Camera Settings")]
         [Tooltip("The distance the camera should maintain from the target")]
         [SerializeField, Range(1f, 20f)] private float followDistance = 17f;
@@ -70,6 +73,14 @@ namespace Cameras
             
             _focusPoint = target.position;
             transform.localRotation = _orbitRotation * Quaternion.Euler(_orbitAngles);
+        }
+
+        private void Start()
+        {
+            if (!isCursorLocked) return;
+            
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         private void LateUpdate()
