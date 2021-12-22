@@ -105,7 +105,7 @@ namespace Cameras
             var castDistance = castLine.magnitude;
             var castDirection = castLine / castDistance;
 
-            if (Physics.BoxCast(castFrom, CameraHalfExtends, castDirection, out var hit, lookRotation, castDistance, obstructionMask))
+            if (Physics.BoxCast(castFrom, CameraHalfExtends, castDirection, out var hit, lookRotation, castDistance, obstructionMask, QueryTriggerInteraction.Ignore))
             {
                 rectPosition = castFrom + castDirection * hit.distance;
                 lookPosition = rectPosition - rectOffset;

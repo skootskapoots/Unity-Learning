@@ -1,3 +1,4 @@
+using System;
 using Inputs;
 using Interfaces;
 using UnityEngine;
@@ -25,8 +26,10 @@ namespace Player.Actions
         [SerializeField] private float crouchHeight = 1.2f;
         [Tooltip("Crouching speed (m/s)")]
         [SerializeField] private float crouchSpeed = 2f;
-        
+
         [Header("Climb Settings")]
+        [Tooltip("Enable player climbing")]
+        [SerializeField] private bool enableClimb = true;
         [Tooltip("Maximum angle in which the player can climb")]
         [SerializeField, Range(90f, 180f)] private float maxClimbAngle = 140f;
         [Tooltip("Climbing speed (m/s)")]
@@ -42,6 +45,14 @@ namespace Player.Actions
         [Tooltip("Maximum amount of air jumps")]
         [SerializeField, Range(0, 5)] private int maxAirJumps = 1;
         
+        [Header("Swimming Settings")]
+        [Tooltip("When the player is considered submerged")]
+        [SerializeField] private float submergenceOffset = 0.5f;
+        [Tooltip("The maximum range of submergence")]
+        [SerializeField, Min(0.1f)] private float submergenceRange = 1f;
+        [Tooltip("Drag applied when in water")]
+        [SerializeField, Range(0f, 10f)] private float waterDrag = 1f;
+        
         [Header("Ground Settings")]
         [Tooltip("Max angle in which the player can climb naturally")]
         [SerializeField] private float maxGroundAngle = 25f;
@@ -56,6 +67,7 @@ namespace Player.Actions
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private LayerMask stairsLayer;
         [SerializeField] private LayerMask climbLayer;
+        [SerializeField] private LayerMask waterLayer;
         [SerializeField] private Transform playerInputSpace;
 
         private bool IsGrounded => _groundContactCount > 0;
@@ -85,6 +97,7 @@ namespace Player.Actions
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
         private float _minClimbDotProduct;
+        private float _submergence;
         private int _stepsSinceGrounded;
         private int _stepsSinceLastJump;
         private int _groundContactCount;
@@ -94,9 +107,9 @@ namespace Player.Actions
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
-        private bool _shouldClimb = true;
 
         private bool IsClimbing => _climbContactCount > 0 && _stepsSinceLastJump > 2;
+        private bool IsSwimming => _submergence > 0f;
 
         private void Awake()
         {
@@ -132,6 +145,9 @@ namespace Player.Actions
         private void FixedUpdate()
         {
             var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
+
+            if (IsSwimming)
+                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
             
             InitializeSimulations();
             UpdateGravityAlignment();
@@ -147,12 +163,10 @@ namespace Player.Actions
                 _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
             else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
                 _velocity += _contactNormal * (Vector3.Dot(gravity, _contactNormal) * Time.deltaTime);
-            else if (_shouldClimb && IsGrounded)
+            else if (enableClimb && IsGrounded)
                 _velocity += (gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
             else
                 _velocity += gravity * Time.deltaTime;
-            
-            Debug.Log(_velocity.sqrMagnitude);
             
             _playerRigidbody.velocity = _velocity;
             transform.SetPositionAndRotation(transform.position, _gravityAlignment);
@@ -195,6 +209,7 @@ namespace Player.Actions
             _groundContactCount = 0;
             _steepContactCount = 0;
             _climbContactCount = 0;
+            _submergence = 0f;
             _contactNormal = Vector3.zero;
             _steepNormal = Vector3.zero;
             _climbNormal = Vector3.zero;
@@ -282,7 +297,7 @@ namespace Player.Actions
                             _connectedBody = collision.rigidbody;
                     }
 
-                    if (_shouldClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
+                    if (enableClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
                     {
                         _climbContactCount++;
                         _climbNormal += normal;
@@ -371,7 +386,7 @@ namespace Player.Actions
             var speed = _velocity.magnitude;
             if (speed > maxSnapSpeed) return false;
 
-            if (!Physics.Raycast(_playerRigidbody.position, -_upAxis, out var hit, groundCheckDistance, groundLayer)) return false;
+            if (!Physics.Raycast(_playerRigidbody.position, -_upAxis, out var hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore)) return false;
 
             var upDot = Vector3.Dot(_upAxis, hit.normal);
             if (upDot < GetMinDot(hit.collider.gameObject.layer)) return false;
@@ -429,6 +444,23 @@ namespace Player.Actions
             _connectedLocalPosition = _connectedBody.transform.InverseTransformPoint(_connectedWorldPosition);
         }
 
+        private void EvaluateSubmergence()
+        {
+            if (Physics.Raycast(
+                _playerRigidbody.position + _upAxis * submergenceOffset,
+                -_upAxis, out var hit, submergenceRange + 1f,
+                waterLayer, QueryTriggerInteraction.Collide
+            ))
+            {
+                _submergence = 1f - hit.distance / submergenceRange;
+                Debug.Log(_submergence);
+            }
+            else
+            {
+                _submergence = 1f;
+            }
+        }
+
         public void OnCollisionEnter(Collision collision)
         {
             EvaluateCollision(collision);
@@ -437,6 +469,18 @@ namespace Player.Actions
         public void OnCollisionStay(Collision collision)
         {
             EvaluateCollision(collision);
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if ((waterLayer & (1 << other.gameObject.layer)) != 0)
+                EvaluateSubmergence();
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            if ((waterLayer & (1 << other.gameObject.layer)) != 0)
+                EvaluateSubmergence();
         }
 
         public void OnMovement(InputAction.CallbackContext context)

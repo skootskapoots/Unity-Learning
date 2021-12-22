@@ -129,11 +129,18 @@ MonoBehaviour:
   walkingSpeed: 4
   sprintSpeed: 8
   maxAcceleration: 20
+  upAlignmentSpeed: 360
   crouchHeight: 1.2
   crouchSpeed: 2
+  enableClimb: 1
+  maxClimbAngle: 140
+  climbSpeed: 2
+  maxClimbAcceleration: 20
   jumpHeight: 1.8
   maxJumpAcceleration: 1
   maxAirJumps: 1
+  submergenceOffset: 1
+  submergenceRange: 1
   maxGroundAngle: 25
   maxStairsAngle: 50
   maxSnapSpeed: 100
@@ -144,4 +151,10 @@ MonoBehaviour:
   stairsLayer:
     serializedVersion: 2
     m_Bits: 512
+  climbLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  waterLayer:
+    serializedVersion: 2
+    m_Bits: 16
   playerInputSpace: {fileID: 0}
