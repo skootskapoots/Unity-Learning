@@ -9,7 +9,7 @@ namespace Player.Actions
 {
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerMovement : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump,
-        IPlayerActionCrouch
+        IPlayerActionCrouch, IPlayerActionSwim
     {
         [Header("Movement Settings")]
         [Tooltip("Walking speed (m/s)")]
@@ -46,12 +46,20 @@ namespace Player.Actions
         [SerializeField, Range(0, 5)] private int maxAirJumps = 1;
         
         [Header("Swimming Settings")]
+        [Tooltip("Maximum swim speed (m/s)")]
+        [SerializeField] private float maxSwimSpeed = 5f;
+        [Tooltip("Maximum swim acceleration")]
+        [SerializeField] private float maxSwimAcceleration = 5f;
         [Tooltip("When the player is considered submerged")]
         [SerializeField] private float submergenceOffset = 0.5f;
         [Tooltip("The maximum range of submergence")]
         [SerializeField, Min(0.1f)] private float submergenceRange = 1f;
         [Tooltip("Drag applied when in water")]
         [SerializeField, Range(0f, 10f)] private float waterDrag = 1f;
+        [Tooltip("The buoyancy of the player (Zero value sinks)")]
+        [SerializeField, Min(0f)] private float buoyancy = 1f;
+        [Tooltip("Threshold in which the player is considered swimming")]
+        [SerializeField, Range(0.01f, 1f)] private float swimThreshold = 0.5f;
         
         [Header("Ground Settings")]
         [Tooltip("Max angle in which the player can climb naturally")]
@@ -93,6 +101,7 @@ namespace Player.Actions
         private Vector3 _rightAxis;
         private Vector3 _forwardAxis;
         private Vector2 _targetMove;
+        private Vector2 _targetSwimMove;
         private float _initialColliderHeight;
         private float _minGroundDotProduct;
         private float _minStairsDotProduct;
@@ -104,12 +113,14 @@ namespace Player.Actions
         private int _steepContactCount;
         private int _climbContactCount;
         private int _jumpPhase;
+        private bool _shouldClimb;
         private bool _isSprinting;
         private bool _isJumping;
         private bool _isCrouching;
 
         private bool IsClimbing => _climbContactCount > 0 && _stepsSinceLastJump > 2;
-        private bool IsSwimming => _submergence > 0f;
+        private bool IsInWater => _submergence > 0f;
+        private bool IsSwimming => _submergence >= swimThreshold;
 
         private void Awake()
         {
@@ -120,6 +131,7 @@ namespace Player.Actions
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
             _playerControls.Player.SetCrouchCallbacks(this);
+            _playerControls.Player.SetSwimCallbacks(this);
             
             _playerRigidbody.useGravity = false;
             _initialColliderHeight = _playerCollider.height;
@@ -144,16 +156,19 @@ namespace Player.Actions
 
         private void FixedUpdate()
         {
+            _shouldClimb = !IsSwimming && enableClimb;
             var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
 
-            if (IsSwimming)
-                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
+            UpdateSimulations();
             
-            InitializeSimulations();
+            if (IsInWater)
+                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
+
             UpdateGravityAlignment();
             AdjustVelocity();
+            
             Crouch();
-            if (_isJumping && !_isCrouching)
+            if (_isJumping && !_isCrouching && !IsSwimming)
             {
                 _isJumping = false;
                 Jump(gravity);
@@ -161,9 +176,11 @@ namespace Player.Actions
 
             if (IsClimbing)
                 _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
+            else if (IsInWater)
+                _velocity += gravity * ((1f - buoyancy * _submergence) * Time.deltaTime);
             else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
                 _velocity += _contactNormal * (Vector3.Dot(gravity, _contactNormal) * Time.deltaTime);
-            else if (enableClimb && IsGrounded)
+            else if (_shouldClimb && IsGrounded)
                 _velocity += (gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
             else
                 _velocity += gravity * Time.deltaTime;
@@ -181,13 +198,13 @@ namespace Player.Actions
             _minClimbDotProduct = Mathf.Cos(maxClimbAngle * Mathf.Deg2Rad);
         }
 
-        private void InitializeSimulations()
+        private void UpdateSimulations()
         {
             _stepsSinceGrounded++;
             _stepsSinceLastJump++;
             _velocity = _playerRigidbody.velocity;
 
-            if (CheckClimbingContacts() || IsGrounded || SnapToGround() || CheckSteepContacts())
+            if (CheckClimbing() || CheckSwimming() || IsGrounded || SnapToGround() || CheckSteepContacts())
             {
                 _stepsSinceGrounded = 0;
                 if (_stepsSinceLastJump > 1) _jumpPhase = 0;
@@ -267,6 +284,10 @@ namespace Player.Actions
             jumpDirection = (jumpDirection + _upAxis).normalized;
             
             var jumpSpeed = Mathf.Sqrt(2f * gravity.magnitude * jumpHeight);
+
+            if (IsInWater)
+                jumpSpeed *= Mathf.Max(0f, 1f - _submergence / swimThreshold);
+            
             var alignedSpeed = Vector3.Dot(_velocity, jumpDirection);
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
 
@@ -275,6 +296,9 @@ namespace Player.Actions
 
         private void EvaluateCollision(Collision collision)
         {
+            if (IsSwimming)
+                return;
+            
             for (var i = 0; i < collision.contactCount; i++)
             {
                 var layer = collision.gameObject.layer;
@@ -297,7 +321,7 @@ namespace Player.Actions
                             _connectedBody = collision.rigidbody;
                     }
 
-                    if (enableClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
+                    if (_shouldClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
                     {
                         _climbContactCount++;
                         _climbNormal += normal;
@@ -310,35 +334,38 @@ namespace Player.Actions
 
         private void AdjustVelocity()
         {
-            float speed;
-            var acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
-            if (_isSprinting && !_isCrouching)
-                speed = sprintSpeed;
-            else if (_isCrouching && !_isSprinting)
-                speed = crouchSpeed;
-            else if (IsClimbing)
-            {
-                acceleration = maxClimbAcceleration;
-                speed = climbSpeed;
-            }
-            else
-                speed = walkingSpeed;
-            
-            _desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
-            
             Vector3 xAxis;
             Vector3 zAxis;
+            float speed;
+            float acceleration;
 
             if (IsClimbing)
             {
+                acceleration = maxClimbAcceleration;
+                speed = climbSpeed;
                 xAxis = Vector3.Cross(_contactNormal, _upAxis);
                 zAxis = _upAxis;
             }
-            else
+            else if (IsInWater)
             {
+                var swimFactor = Mathf.Min(1f, _submergence / swimThreshold);
+                acceleration = Mathf.LerpUnclamped(
+                    IsGrounded ? maxAcceleration : maxJumpAcceleration,
+                    maxSwimAcceleration, swimFactor);
+
+                speed = Mathf.LerpUnclamped(walkingSpeed, maxSwimSpeed, swimFactor);
                 xAxis = _rightAxis;
                 zAxis = _forwardAxis;
             }
+            else
+            {
+                acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
+                speed = _isSprinting ? sprintSpeed : walkingSpeed;
+                xAxis = _rightAxis;
+                zAxis = _forwardAxis;
+            }
+            
+            _desiredVelocity = new Vector3(_targetMove.x, 0f, _targetMove.y) * speed;
 
             xAxis = ProjectDirectionOnPlane(xAxis, _contactNormal);
             zAxis = ProjectDirectionOnPlane(zAxis, _contactNormal);
@@ -353,6 +380,15 @@ namespace Player.Actions
             var newZ = Mathf.MoveTowards(currentZ, _desiredVelocity.z, maxSpeedChange);
             
             _velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+
+            if (IsSwimming)
+            {
+                var currentY = Vector3.Dot(relativeVelocity, _upAxis);
+                var newY = Mathf.MoveTowards(
+                    currentY, _targetSwimMove.y * speed, maxSpeedChange);
+
+                _velocity += _upAxis * (newY - currentY);
+            }
         }
         
         private void UpdateGravityAlignment()
@@ -382,7 +418,7 @@ namespace Player.Actions
         private bool SnapToGround()
         {
             if (_stepsSinceGrounded > 1 || _stepsSinceLastJump <= 2) return false;
-            
+
             var speed = _velocity.magnitude;
             if (speed > maxSnapSpeed) return false;
 
@@ -415,7 +451,7 @@ namespace Player.Actions
 
         }
 
-        private bool CheckClimbingContacts()
+        private bool CheckClimbing()
         {
             if (!IsClimbing) return false;
             
@@ -432,6 +468,15 @@ namespace Player.Actions
 
         }
 
+        private bool CheckSwimming()
+        {
+            if (!IsSwimming) return false;
+            
+            _groundContactCount = 0;
+            _contactNormal = _upAxis;
+            return true;
+        }
+
         private void UpdateConnectedState()
         {
             if (_connectedBody == _previousConnectedBody)
@@ -444,7 +489,7 @@ namespace Player.Actions
             _connectedLocalPosition = _connectedBody.transform.InverseTransformPoint(_connectedWorldPosition);
         }
 
-        private void EvaluateSubmergence()
+        private void EvaluateSubmergence(Collider other)
         {
             if (Physics.Raycast(
                 _playerRigidbody.position + _upAxis * submergenceOffset,
@@ -453,12 +498,14 @@ namespace Player.Actions
             ))
             {
                 _submergence = 1f - hit.distance / submergenceRange;
-                Debug.Log(_submergence);
             }
             else
             {
                 _submergence = 1f;
             }
+
+            if (IsSwimming)
+                _connectedBody = _playerCollider.attachedRigidbody;
         }
 
         public void OnCollisionEnter(Collision collision)
@@ -474,13 +521,13 @@ namespace Player.Actions
         private void OnTriggerEnter(Collider other)
         {
             if ((waterLayer & (1 << other.gameObject.layer)) != 0)
-                EvaluateSubmergence();
+                EvaluateSubmergence(other);
         }
 
         private void OnTriggerStay(Collider other)
         {
             if ((waterLayer & (1 << other.gameObject.layer)) != 0)
-                EvaluateSubmergence();
+                EvaluateSubmergence(other);
         }
 
         public void OnMovement(InputAction.CallbackContext context)
@@ -502,6 +549,12 @@ namespace Player.Actions
         public void OnJump(InputAction.CallbackContext context)
         {
             _isJumping = context.ReadValueAsButton();
+        }
+
+        public void OnSwim(InputAction.CallbackContext context)
+        {
+            var rawInputValue = context.ReadValue<Vector2>();
+            _targetSwimMove = Vector2.ClampMagnitude(rawInputValue, 1f);
         }
     
         private void OnEnable()
