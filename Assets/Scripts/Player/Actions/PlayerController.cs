@@ -1,4 +1,3 @@
-using System;
 using Inputs;
 using Interfaces;
 using UnityEngine;
@@ -8,7 +7,7 @@ using World.Gravity;
 namespace Player.Actions
 {
     [RequireComponent(typeof(Rigidbody))]
-    public class PlayerMovement : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump,
+    public class PlayerController : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump,
         IPlayerActionCrouch, IPlayerActionSwim
     {
         [Header("Movement Settings")]
@@ -159,7 +158,7 @@ namespace Player.Actions
             _shouldClimb = !IsSwimming && enableClimb;
             var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
 
-            UpdateSimulations();
+            UpdateState();
             
             if (IsInWater)
                 _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
@@ -188,7 +187,7 @@ namespace Player.Actions
             _playerRigidbody.velocity = _velocity;
             transform.SetPositionAndRotation(transform.position, _gravityAlignment);
 
-            ResetSimulations();
+            ResetState();
         }
 
         private void OnValidate()
@@ -198,7 +197,7 @@ namespace Player.Actions
             _minClimbDotProduct = Mathf.Cos(maxClimbAngle * Mathf.Deg2Rad);
         }
 
-        private void UpdateSimulations()
+        private void UpdateState()
         {
             _stepsSinceGrounded++;
             _stepsSinceLastJump++;
@@ -220,7 +219,7 @@ namespace Player.Actions
                     UpdateConnectedState();
         }
 
-        private void ResetSimulations()
+        private void ResetState()
         {
             _playerRigidbody.velocity = _velocity;
             _groundContactCount = 0;
@@ -233,6 +232,18 @@ namespace Player.Actions
             _connectedVelocity = Vector3.zero;
             _previousConnectedBody = _connectedBody;
             _connectedBody = null;
+        }
+        
+        private void UpdateConnectedState()
+        {
+            if (_connectedBody == _previousConnectedBody)
+            {
+                var connectionMovement = _connectedBody.transform.TransformPoint(_connectedLocalPosition) - _connectedWorldPosition;
+                _connectedVelocity = connectionMovement / Time.deltaTime;
+            }
+            
+            _connectedWorldPosition = _playerRigidbody.position;
+            _connectedLocalPosition = _connectedBody.transform.InverseTransformPoint(_connectedWorldPosition);
         }
 
         private void Crouch()
@@ -292,44 +303,6 @@ namespace Player.Actions
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
 
             _velocity += jumpDirection * jumpSpeed;
-        }
-
-        private void EvaluateCollision(Collision collision)
-        {
-            if (IsSwimming)
-                return;
-            
-            for (var i = 0; i < collision.contactCount; i++)
-            {
-                var layer = collision.gameObject.layer;
-                var minDot = GetMinDot(layer);
-                var normal = collision.GetContact(i).normal;
-                var upDot = Vector3.Dot(_upAxis, normal);
-                if (upDot >= minDot)
-                {
-                    _groundContactCount++;
-                    _contactNormal += normal;
-                    _connectedBody = collision.rigidbody;
-                }
-                else
-                {
-                    if (upDot > -0.01f)
-                    {
-                        _steepContactCount++;
-                        _steepNormal += normal;
-                        if (_groundContactCount == 0)
-                            _connectedBody = collision.rigidbody;
-                    }
-
-                    if (_shouldClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
-                    {
-                        _climbContactCount++;
-                        _climbNormal += normal;
-                        _lastClimbNormal = normal;
-                        _connectedBody = collision.rigidbody;
-                    }
-                }
-            }
         }
 
         private void AdjustVelocity()
@@ -477,19 +450,45 @@ namespace Player.Actions
             return true;
         }
 
-        private void UpdateConnectedState()
+        private void EvaluateCollision(Collision collision)
         {
-            if (_connectedBody == _previousConnectedBody)
-            {
-                var connectionMovement = _connectedBody.transform.TransformPoint(_connectedLocalPosition) - _connectedWorldPosition;
-                _connectedVelocity = connectionMovement / Time.deltaTime;
-            }
+            if (IsSwimming)
+                return;
             
-            _connectedWorldPosition = _playerRigidbody.position;
-            _connectedLocalPosition = _connectedBody.transform.InverseTransformPoint(_connectedWorldPosition);
+            for (var i = 0; i < collision.contactCount; i++)
+            {
+                var layer = collision.gameObject.layer;
+                var minDot = GetMinDot(layer);
+                var normal = collision.GetContact(i).normal;
+                var upDot = Vector3.Dot(_upAxis, normal);
+                if (upDot >= minDot)
+                {
+                    _groundContactCount++;
+                    _contactNormal += normal;
+                    _connectedBody = collision.rigidbody;
+                }
+                else
+                {
+                    if (upDot > -0.01f)
+                    {
+                        _steepContactCount++;
+                        _steepNormal += normal;
+                        if (_groundContactCount == 0)
+                            _connectedBody = collision.rigidbody;
+                    }
+
+                    if (_shouldClimb && upDot >= _minClimbDotProduct && (climbLayer & (1 << layer)) != 0)
+                    {
+                        _climbContactCount++;
+                        _climbNormal += normal;
+                        _lastClimbNormal = normal;
+                        _connectedBody = collision.rigidbody;
+                    }
+                }
+            }
         }
 
-        private void EvaluateSubmergence(Collider other)
+        private void EvaluateSubmergence()
         {
             if (Physics.Raycast(
                 _playerRigidbody.position + _upAxis * submergenceOffset,
@@ -521,13 +520,13 @@ namespace Player.Actions
         private void OnTriggerEnter(Collider other)
         {
             if ((waterLayer & (1 << other.gameObject.layer)) != 0)
-                EvaluateSubmergence(other);
+                EvaluateSubmergence();
         }
 
         private void OnTriggerStay(Collider other)
         {
             if ((waterLayer & (1 << other.gameObject.layer)) != 0)
-                EvaluateSubmergence(other);
+                EvaluateSubmergence();
         }
 
         public void OnMovement(InputAction.CallbackContext context)
