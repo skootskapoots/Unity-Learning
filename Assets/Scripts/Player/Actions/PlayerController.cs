@@ -88,6 +88,7 @@ namespace Player.Actions
         private Quaternion _gravityAlignment = Quaternion.identity;
         private Vector3 _velocity;
         private Vector3 _desiredVelocity;
+        private Vector3 _gravity;
         private Vector3 _contactNormal;
         private Vector3 _steepNormal;
         private Vector3 _climbNormal;
@@ -156,12 +157,9 @@ namespace Player.Actions
         private void FixedUpdate()
         {
             _shouldClimb = !IsSwimming && enableClimb;
-            var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
+            _gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
 
             UpdateState();
-            
-            if (IsInWater)
-                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
 
             UpdateGravityAlignment();
             AdjustVelocity();
@@ -170,20 +168,9 @@ namespace Player.Actions
             if (_isJumping && !_isCrouching && !IsSwimming)
             {
                 _isJumping = false;
-                Jump(gravity);
+                Jump(_gravity);
             }
 
-            if (IsClimbing)
-                _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
-            else if (IsInWater)
-                _velocity += gravity * ((1f - buoyancy * _submergence) * Time.deltaTime);
-            else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
-                _velocity += _contactNormal * (Vector3.Dot(gravity, _contactNormal) * Time.deltaTime);
-            else if (_shouldClimb && IsGrounded)
-                _velocity += (gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
-            else
-                _velocity += gravity * Time.deltaTime;
-            
             _playerRigidbody.velocity = _velocity;
             transform.SetPositionAndRotation(transform.position, _gravityAlignment);
 
@@ -311,6 +298,9 @@ namespace Player.Actions
             Vector3 zAxis;
             float speed;
             float acceleration;
+            
+            if (IsInWater)
+                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
 
             if (IsClimbing)
             {
@@ -362,6 +352,17 @@ namespace Player.Actions
 
                 _velocity += _upAxis * (newY - currentY);
             }
+            
+            if (IsClimbing)
+                _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
+            else if (IsInWater)
+                _velocity += _gravity * ((1f - buoyancy * _submergence) * Time.deltaTime);
+            else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
+                _velocity += _contactNormal * (Vector3.Dot(_gravity, _contactNormal) * Time.deltaTime);
+            else if (_shouldClimb && IsGrounded)
+                _velocity += (_gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
+            else
+                _velocity += _gravity * Time.deltaTime;
         }
         
         private void UpdateGravityAlignment()
