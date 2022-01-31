@@ -129,7 +129,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh19762
+  m_Name: pb_Mesh21106
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -726,7 +726,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh19752
+  m_Name: pb_Mesh21064
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -1217,7 +1217,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh19732
+  m_Name: pb_Mesh21050
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -5251,7 +5251,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh-7542
+  m_Name: pb_Mesh21118
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -5466,32 +5466,160 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: buoyancy
-      value: 1.4
-      objectReference: {fileID: 0}
+      value: 
+      objectReference: {fileID: 11400000, guid: 7d500dc5730671644bac5a68e5427234, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: swimSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: ee71e42ec3d44314d9f0bef0b8f153c0, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: walkSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 5a35a9a17d4ea054c8136897c7098aef, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: waterDrag
+      value: 
+      objectReference: {fileID: 11400000, guid: 6c2bb963c11b23d4898992f0f33a4732, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: climbSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 255ba9fdac2ed6c44b89a4a9a197f68f, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableJump
+      value: 
+      objectReference: {fileID: 11400000, guid: f7c43f3f17ae8c544b89afa4e13fd7ba, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableSwim
+      value: 
+      objectReference: {fileID: 11400000, guid: 9614dd8b0e9fbe64582ffb1ba2a5e12f, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableWalk
+      value: 
+      objectReference: {fileID: 11400000, guid: 1d93a5baa7349d44a9e9d32dc4a89876, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: jumpHeight
+      value: 
+      objectReference: {fileID: 11400000, guid: a25bded83cac18248924d48ef4de99e8, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: crouchSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: c8c94d8a543b8044a99efb7cf7dc0bb2, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableClimb
+      value: 
+      objectReference: {fileID: 11400000, guid: 5eaac256fe4d91243b0b854544798732, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxAirJumps
+      value: 
+      objectReference: {fileID: 11400000, guid: e399ba05f0847214abc032a69bf79990, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: sprintSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 2e7d49237029b834ea8bfa39300b3dc7, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: crouchHeight
+      value: 
+      objectReference: {fileID: 11400000, guid: 81b5ca9b14576654a929da535f80c17f, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableCrouch
+      value: 
+      objectReference: {fileID: 11400000, guid: 4558ad27e02075e49ad1e85592ae1264, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: enableSprint
+      value: 
+      objectReference: {fileID: 11400000, guid: 488853c6a68fe6b45a55cd57da5b0ac2, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxSnapSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 5ac57d8d5ac97e349872d67a794f037a, type: 2}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: maxSwimSpeed
-      value: 3
+      value: 
+      objectReference: {fileID: 11400000, guid: ee71e42ec3d44314d9f0bef0b8f153c0, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: walkingSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 5a35a9a17d4ea054c8136897c7098aef, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxClimbAngle
+      value: 
+      objectReference: {fileID: 11400000, guid: bfe75f1d2309fda41b421c342c328087, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: swimThreshold
+      value: 
+      objectReference: {fileID: 11400000, guid: 3593e9189b7c50b4bbbe1110336bd2fa, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxGroundAngle
+      value: 
+      objectReference: {fileID: 11400000, guid: 67e03ac62ff500a4e8f2faee12d58d82, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxStairsAngle
+      value: 
+      objectReference: {fileID: 11400000, guid: 02993af9660540945bb5ce41cb436d66, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: maxAcceleration
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: jumpAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: df2bc5145d21fe54eb970cab48acd37e, type: 2}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: playerInputSpace
       value: 
       objectReference: {fileID: 747678332}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: submergenceProbe
+      value: 
+      objectReference: {fileID: 11400000, guid: 44a790f8a7bdac545916eeb0190955de, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: submergenceRange
-      value: 1
+      value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: swimAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 07e932cac94e59748a1b2ebfa1224997, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: upAlignmentSpeed
+      value: 
+      objectReference: {fileID: 11400000, guid: 90922f9d274acf5498982aad150f0058, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: walkAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 255d1e14b8d6df045a1321eb780b0d01, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: climbAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 86dcbdfa183c706438407678d0a9c310, type: 2}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: climbLayer.m_Bits
       value: 64
       objectReference: {fileID: 0}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: submergenceOffset
-      value: 0.5
-      objectReference: {fileID: 0}
+      value: 
+      objectReference: {fileID: 11400000, guid: 7356a923ef70cb84cb1e8cce7797e3cc, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: sprintAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 69de1a86f87db4a438ff9898a17beac4, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: groundCheckDistance
+      value: 
+      objectReference: {fileID: 11400000, guid: 2910c9cb35559ef4e9c0eab918b4d34a, type: 2}
     - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
       propertyPath: maxSwimAcceleration
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: movementAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 255d1e14b8d6df045a1321eb780b0d01, type: 2}
+    - target: {fileID: 7697863581119058506, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
+      propertyPath: walkSprintAcceleration
+      value: 
+      objectReference: {fileID: 11400000, guid: 255d1e14b8d6df045a1321eb780b0d01, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d2ab37a71fe303f45933b48c11d6878f, type: 3}
 --- !u!850595691 &1526596717
@@ -7798,7 +7926,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh19746
+  m_Name: pb_Mesh21082
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2

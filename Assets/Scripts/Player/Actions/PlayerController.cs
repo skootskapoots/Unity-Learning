@@ -1,5 +1,6 @@
 using Inputs;
 using Interfaces;
+using UnityAtoms.BaseAtoms;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using World.Gravity;
@@ -10,65 +11,79 @@ namespace Player.Actions
     public class PlayerController : MonoBehaviour, IPlayerActionMovement, IPlayerActionSprint, IPlayerActionJump,
         IPlayerActionCrouch, IPlayerActionSwim
     {
-        [Header("Movement Settings")]
+        [Header("Walk Settings")]
+        [Tooltip("Toggle player walking")]
+        [SerializeField] private BoolVariable enableWalk;
         [Tooltip("Walking speed (m/s)")]
-        [SerializeField] private float walkingSpeed = 4f;
-        [Tooltip("Sprinting speed (m/s)")]
-        [SerializeField] private float sprintSpeed = 6f;
-        [Tooltip("Maximum player acceleration and deceleration")]
-        [SerializeField] private float maxAcceleration = 10f;
-        [Tooltip("Alignment speed of the up direction based on gravity")]
-        [SerializeField, Min(0f)] private float upAlignmentSpeed = 360f;
+        [SerializeField] private FloatConstant walkSpeed;
+        [Tooltip("Walk acceleration")]
+        [SerializeField] private FloatConstant walkAcceleration;
+        [Tooltip("Max angle in which the player can climb naturally")]
+        [SerializeField] private FloatConstant maxGroundAngle;
+        [Tooltip("Max angle in which the player can climb stairs")]
+        [SerializeField] private FloatConstant maxStairsAngle;
         
+        [Header("Sprint Settings")]
+        [Tooltip("Toggle player sprinting")]
+        [SerializeField] private BoolVariable enableSprint;
+        [Tooltip("Sprinting speed (m/s)")]
+        [SerializeField] private FloatConstant sprintSpeed;
+        [Tooltip("Sprint acceleration")]
+        [SerializeField] private FloatConstant sprintAcceleration;
+
         [Header("Crouch Settings")]
+        [Tooltip("Toggle player crouching")]
+        [SerializeField] private BoolVariable enableCrouch;
         [Tooltip("Crouch height in meters")]
-        [SerializeField] private float crouchHeight = 1.2f;
+        [SerializeField] private FloatConstant crouchHeight;
         [Tooltip("Crouching speed (m/s)")]
-        [SerializeField] private float crouchSpeed = 2f;
+        [SerializeField] private FloatConstant crouchSpeed;
+        
+        [Header("Jump Settings")]
+        [Tooltip("Toggle player jumping")]
+        [SerializeField] private BoolVariable enableJump;
+        [Tooltip("Player jump acceleration")]
+        [SerializeField] private FloatConstant jumpAcceleration;
+        [Tooltip("Jump height in meters")]
+        [SerializeField] private FloatConstant jumpHeight;
+        [Tooltip("Maximum amount of air jumps")]
+        [SerializeField] private IntConstant maxAirJumps;
 
         [Header("Climb Settings")]
-        [Tooltip("Enable player climbing")]
-        [SerializeField] private bool enableClimb = true;
-        [Tooltip("Maximum angle in which the player can climb")]
-        [SerializeField, Range(90f, 180f)] private float maxClimbAngle = 140f;
+        [Tooltip("Toggle player climbing")]
+        [SerializeField] private BoolVariable enableClimb;
         [Tooltip("Climbing speed (m/s)")]
-        [SerializeField] private float climbSpeed = 2f;
-        [Tooltip("Maximum player climb acceleration")]
-        [SerializeField] private float maxClimbAcceleration = 20f;
-
-        [Header("Jump Settings")]
-        [Tooltip("Jump height in meters")]
-        [SerializeField] private float jumpHeight = 1.2f;
-        [Tooltip("Maximum player jump acceleration")]
-        [SerializeField] private float maxJumpAcceleration = 1f;
-        [Tooltip("Maximum amount of air jumps")]
-        [SerializeField, Range(0, 5)] private int maxAirJumps = 1;
+        [SerializeField] private FloatConstant climbSpeed;
+        [Tooltip("Player climb acceleration")]
+        [SerializeField] private FloatConstant climbAcceleration;
+        [Tooltip("Maximum angle in which the player can climb")]
+        [SerializeField] private FloatConstant maxClimbAngle;
         
-        [Header("Swimming Settings")]
-        [Tooltip("Maximum swim speed (m/s)")]
-        [SerializeField] private float maxSwimSpeed = 5f;
-        [Tooltip("Maximum swim acceleration")]
-        [SerializeField] private float maxSwimAcceleration = 5f;
-        [Tooltip("When the player is considered submerged")]
-        [SerializeField] private float submergenceOffset = 0.5f;
-        [Tooltip("The maximum range of submergence")]
-        [SerializeField, Min(0.1f)] private float submergenceRange = 1f;
-        [Tooltip("Drag applied when in water")]
-        [SerializeField, Range(0f, 10f)] private float waterDrag = 1f;
-        [Tooltip("The buoyancy of the player (Zero value sinks)")]
-        [SerializeField, Min(0f)] private float buoyancy = 1f;
+        [Header("Swim Settings")]
+        [Tooltip("Toggle player swimming")]
+        [SerializeField] private BoolVariable enableSwim;
         [Tooltip("Threshold in which the player is considered swimming")]
-        [SerializeField, Range(0.01f, 1f)] private float swimThreshold = 0.5f;
-        
+        [SerializeField] private FloatConstant swimThreshold;
+        [Tooltip("When the player is considered submerged")]
+        [SerializeField] private FloatConstant submergenceOffset;
+        [Tooltip("The maximum range of submergence probe")]
+        [SerializeField] private FloatConstant submergenceProbe;
+        [Tooltip("Maximum swim speed (m/s)")]
+        [SerializeField] private FloatConstant swimSpeed;
+        [Tooltip("Player swim acceleration")]
+        [SerializeField] private FloatConstant swimAcceleration;
+        [Tooltip("Drag applied when in water")]
+        [SerializeField] private FloatConstant waterDrag;
+        [Tooltip("The buoyancy of the player (Zero value sinks)")]
+        [SerializeField] private FloatConstant buoyancy;
+
         [Header("Ground Settings")]
-        [Tooltip("Max angle in which the player can climb naturally")]
-        [SerializeField] private float maxGroundAngle = 25f;
-        [Tooltip("Max angle in which the player can climb stairs")]
-        [SerializeField] private float maxStairsAngle = 50f;
+        [Tooltip("Alignment speed of the up direction based on gravity")]
+        [SerializeField] private FloatConstant upAlignmentSpeed;
         [Tooltip("Max speed for ground snapping")]
-        [SerializeField] private float maxSnapSpeed = 100f;
+        [SerializeField] private FloatConstant maxSnapSpeed;
         [Tooltip("Distance in which to check for ground in order to snap to")]
-        [SerializeField] private float groundCheckDistance = 0.6f;
+        [SerializeField] private FloatConstant groundCheckDistance;
 
         [Header("Component Registry")]
         [SerializeField] private LayerMask groundLayer;
@@ -119,13 +134,14 @@ namespace Player.Actions
 
         private bool IsClimbing => _climbContactCount > 0 && _stepsSinceLastJump > 2;
         private bool IsInWater => _submergence > 0f;
-        private bool IsSwimming => _submergence >= swimThreshold;
+        private bool IsSwimming => _submergence >= swimThreshold.Value;
 
         private void Awake()
         {
             _playerControls = new PlayerControls();
             _playerRigidbody = GetComponent<Rigidbody>();
             _playerCollider = GetComponent<CapsuleCollider>();
+            
             _playerControls.Player.SetMovementCallbacks(this);
             _playerControls.Player.SetSprintCallbacks(this);
             _playerControls.Player.SetJumpCallbacks(this);
@@ -155,13 +171,13 @@ namespace Player.Actions
 
         private void FixedUpdate()
         {
-            _shouldClimb = !IsSwimming && enableClimb;
+            _shouldClimb = !IsSwimming && enableClimb.Value;
             var gravity = DefaultGravity.GetGravity(_playerRigidbody.position, out _upAxis);
 
             UpdateState();
             
             if (IsInWater)
-                _velocity *= 1f - waterDrag * _submergence * Time.deltaTime;
+                _velocity *= 1f - waterDrag.Value * _submergence * Time.deltaTime;
 
             UpdateGravityAlignment();
             AdjustVelocity();
@@ -174,13 +190,13 @@ namespace Player.Actions
             }
 
             if (IsClimbing)
-                _velocity -= _contactNormal * (maxClimbAcceleration * 0.9f * Time.deltaTime);
+                _velocity -= _contactNormal * (climbAcceleration.Value * 0.9f * Time.deltaTime);
             else if (IsInWater)
-                _velocity += gravity * ((1f - buoyancy * _submergence) * Time.deltaTime);
+                _velocity += gravity * ((1f - buoyancy.Value * _submergence) * Time.deltaTime);
             else if (IsGrounded && _velocity.sqrMagnitude < 0.05f)
                 _velocity += _contactNormal * (Vector3.Dot(gravity, _contactNormal) * Time.deltaTime);
             else if (_shouldClimb && IsGrounded)
-                _velocity += (gravity - _contactNormal * (maxClimbAcceleration * 0.9f)) * Time.deltaTime;
+                _velocity += (gravity - _contactNormal * (climbAcceleration.Value * 0.9f)) * Time.deltaTime;
             else
                 _velocity += gravity * Time.deltaTime;
             
@@ -192,9 +208,9 @@ namespace Player.Actions
 
         private void OnValidate()
         {
-            _minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
-            _minStairsDotProduct = Mathf.Cos(maxStairsAngle * Mathf.Deg2Rad);
-            _minClimbDotProduct = Mathf.Cos(maxClimbAngle * Mathf.Deg2Rad);
+            _minGroundDotProduct = Mathf.Cos(maxGroundAngle.Value * Mathf.Deg2Rad);
+            _minStairsDotProduct = Mathf.Cos(maxStairsAngle.Value * Mathf.Deg2Rad);
+            _minClimbDotProduct = Mathf.Cos(maxClimbAngle.Value * Mathf.Deg2Rad);
         }
 
         private void UpdateState()
@@ -250,15 +266,15 @@ namespace Player.Actions
         {
             switch (_isCrouching)
             {
-                case true when !Mathf.Approximately(_playerCollider.height, crouchHeight):
+                case true when !Mathf.Approximately(_playerCollider.height, crouchHeight.Value):
                 {
-                    _playerCollider.height = crouchHeight;
+                    _playerCollider.height = crouchHeight.Value;
                 
                     var center = _playerCollider.center;
                     _playerCollider.center = new Vector3(center.x, 0.25f, center.z);
                     break;
                 }
-                case false when Mathf.Approximately(_playerCollider.height, crouchHeight):
+                case false when Mathf.Approximately(_playerCollider.height, crouchHeight.Value):
                 {
                     _playerCollider.height = _initialColliderHeight;
                     _playerCollider.center = new Vector3(_initialColliderCenter.x, 0f, _initialColliderCenter.z);
@@ -280,7 +296,7 @@ namespace Player.Actions
                 jumpDirection = _steepNormal;
                 _jumpPhase = 0;
             }
-            else if (maxAirJumps > 0 && _jumpPhase <= maxAirJumps)
+            else if (maxAirJumps.Value > 0 && _jumpPhase <= maxAirJumps.Value)
             {
                 if (_jumpPhase == 0) _jumpPhase = 1;
                 jumpDirection = _contactNormal;
@@ -294,10 +310,10 @@ namespace Player.Actions
             _jumpPhase++;
             jumpDirection = (jumpDirection + _upAxis).normalized;
             
-            var jumpSpeed = Mathf.Sqrt(2f * gravity.magnitude * jumpHeight);
+            var jumpSpeed = Mathf.Sqrt(2f * gravity.magnitude * jumpHeight.Value);
 
             if (IsInWater)
-                jumpSpeed *= Mathf.Max(0f, 1f - _submergence / swimThreshold);
+                jumpSpeed *= Mathf.Max(0f, 1f - _submergence / swimThreshold.Value);
             
             var alignedSpeed = Vector3.Dot(_velocity, jumpDirection);
             if (alignedSpeed > 0f) jumpSpeed = Mathf.Max(jumpSpeed - alignedSpeed, 0f);
@@ -314,26 +330,26 @@ namespace Player.Actions
 
             if (IsClimbing)
             {
-                acceleration = maxClimbAcceleration;
-                speed = climbSpeed;
+                acceleration = climbAcceleration.Value;
+                speed = climbSpeed.Value;
                 xAxis = Vector3.Cross(_contactNormal, _upAxis);
                 zAxis = _upAxis;
             }
             else if (IsInWater)
             {
-                var swimFactor = Mathf.Min(1f, _submergence / swimThreshold);
+                var swimFactor = Mathf.Min(1f, _submergence / swimThreshold.Value);
                 acceleration = Mathf.LerpUnclamped(
-                    IsGrounded ? maxAcceleration : maxJumpAcceleration,
-                    maxSwimAcceleration, swimFactor);
+                    IsGrounded ? walkAcceleration.Value : jumpAcceleration.Value,
+                    swimAcceleration.Value, swimFactor);
 
-                speed = Mathf.LerpUnclamped(walkingSpeed, maxSwimSpeed, swimFactor);
+                speed = Mathf.LerpUnclamped(walkSpeed.Value, swimSpeed.Value, swimFactor);
                 xAxis = _rightAxis;
                 zAxis = _forwardAxis;
             }
             else
             {
-                acceleration = IsGrounded ? maxAcceleration : maxJumpAcceleration;
-                speed = _isSprinting ? sprintSpeed : walkingSpeed;
+                acceleration = IsGrounded ? walkAcceleration.Value : jumpAcceleration.Value;
+                speed = _isSprinting ? sprintSpeed.Value : walkSpeed.Value;
                 xAxis = _rightAxis;
                 zAxis = _forwardAxis;
             }
@@ -371,7 +387,7 @@ namespace Player.Actions
 
             var dot = Mathf.Clamp(Vector3.Dot(fromUp, toUp), -1f, 1f);
             var angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
-            var maxAngle = upAlignmentSpeed * Time.deltaTime;
+            var maxAngle = upAlignmentSpeed.Value * Time.deltaTime;
 
             var newAlignment = Quaternion.FromToRotation(fromUp, toUp) * _gravityAlignment;
 
@@ -393,9 +409,9 @@ namespace Player.Actions
             if (_stepsSinceGrounded > 1 || _stepsSinceLastJump <= 2) return false;
 
             var speed = _velocity.magnitude;
-            if (speed > maxSnapSpeed) return false;
+            if (speed > maxSnapSpeed.Value) return false;
 
-            if (!Physics.Raycast(_playerRigidbody.position, -_upAxis, out var hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore)) return false;
+            if (!Physics.Raycast(_playerRigidbody.position, -_upAxis, out var hit, groundCheckDistance.Value, groundLayer, QueryTriggerInteraction.Ignore)) return false;
 
             var upDot = Vector3.Dot(_upAxis, hit.normal);
             if (upDot < GetMinDot(hit.collider.gameObject.layer)) return false;
@@ -491,12 +507,12 @@ namespace Player.Actions
         private void EvaluateSubmergence()
         {
             if (Physics.Raycast(
-                _playerRigidbody.position + _upAxis * submergenceOffset,
-                -_upAxis, out var hit, submergenceRange + 1f,
+                _playerRigidbody.position + _upAxis * submergenceOffset.Value,
+                -_upAxis, out var hit, submergenceProbe.Value + 1f,
                 waterLayer, QueryTriggerInteraction.Collide
             ))
             {
-                _submergence = 1f - hit.distance / submergenceRange;
+                _submergence = 1f - hit.distance / submergenceProbe.Value;
             }
             else
             {
